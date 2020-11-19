@@ -4,6 +4,7 @@
 #define _MAP_H_
 
 #include "Scene.h"
+#include "Player.h"
 using namespace System;
 using namespace System::Collections::Generic;
 using namespace System::Drawing;
@@ -52,7 +53,7 @@ public:
 
     //Create the list of scenes and select the start point of the first one
     this->scenes = gcnew List<Scene^>;
-    this->CreateScene(1, 1, 1, 1, Point(468, 312));
+    this->CreateScene(1, 1, 1, 1, Point(0, 0));
   }
 
   void CreateScene(bool up, bool down, bool left, bool right, Point pos) {
@@ -60,7 +61,7 @@ public:
     this->scenes[this->scenes->Count - 1]->CreateSpawner(pos);
   }
 
-  void StartGeneration(Graphics^ g) {
+  void StartGeneration(Graphics^ g, Player^ player) {
     //Generate new Scenes
     if (this->isGenerating) {
 
@@ -159,26 +160,57 @@ public:
     }
     else if (this->scenes->Count < this->maxScenes && this->isGenerating == false) {
       this->Reboot();
-    } else {
+    }
+    else {
       //The Map is now generated
       this->generated = true;
-
-      //Put a color to the background
-      //g->Clear(Color::FromArgb(255, 37, 37, 37));
-
       //Draw all the scenes
       for each (Scene ^ curScene in this->scenes) {
-        //Put a color to the maze
-        g->FillRectangle(Brushes::CornflowerBlue, curScene->GetDrawingArea());
-
-        //Put a different color to the background of the first and last scene
-        if (curScene == this->scenes[0])
-          g->FillRectangle(Brushes::Crimson, curScene->GetDrawingArea());
-        else if (curScene == this->scenes[this->scenes->Count - 1])
-          g->FillRectangle(Brushes::BlueViolet, curScene->GetDrawingArea());
-
         // Draw the scene
-        curScene->Draw(g);
+        if (player->Collides(curScene->GetDrawingArea())) {
+          curScene->Draw(g);
+          //Draw their doors
+          curScene->DrawDoors(g);
+        }
+      }
+    }
+  }
+
+  void MoveMap(Player^ player) {
+
+    bool changeposition = false;
+    //Position to add to the scenes
+    Point add(0, 0);
+
+    //If the player goes to the up door
+    if (player->GetPosition().Y <= 60) {
+      player->SetPosition(Point(446, 460));
+      add.Y = 624;
+      changeposition = true;
+    }
+    //If the player goes to the down door
+    else if (player->GetPosition().Y >= 530) {
+      player->SetPosition(Point(446, 80));
+      add.Y = -624;
+      changeposition = true;
+    }
+    //If the player goes to the left door
+    else if (player->GetPosition().X <= 70) {
+      player->SetPosition(Point(795, 266));
+      add.X = 936;
+      changeposition = true;
+    }
+    //If the player goes to the right door
+    else if (player->GetPosition().X >= 850) {
+      player->SetPosition(Point(90, 266));
+      add.X = -936;
+      changeposition = true;
+    }
+    //Did the player go to a door?
+    if (changeposition) {
+      //Change all the scenes position
+      for each (Scene ^ scene in this->scenes) {
+        scene->SetPosition(Point(scene->GetPos().X + add.X, scene->GetPos().Y + add.Y));
       }
     }
   }

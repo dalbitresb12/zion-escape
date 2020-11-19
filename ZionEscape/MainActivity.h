@@ -45,7 +45,7 @@ namespace ZionEscape {
       PointF nodeRadius = PointF(18, 10);
       mapGrid = gcnew Grid(unwalkableLayer, gridWorldSize, nodeRadius);
 
-      player = gcnew Player(Point(200, 400));
+      player = gcnew Player(Point(200, 100));
 
       npcs = gcnew List<NPC^>;
       npcs->Add(gcnew Ally(Point(700, 200)));
@@ -104,8 +104,10 @@ namespace ZionEscape {
 #pragma endregion
   private: void MainActivity_Paint(Object^ sender, PaintEventArgs^ e) {
     Graphics^ world = e->Graphics;
-    world->DrawImage(this->background, Point(0, 0));
-    this->game->StartGeneration(world);
+    //world->DrawImage(this->background, Point(0, 0));
+
+    this->game->StartGeneration(world, player);
+
     for each (NPC ^ npc in npcs) {
       npc->Draw(world);
     }

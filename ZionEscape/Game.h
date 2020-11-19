@@ -4,6 +4,7 @@
 #define _GAME_H_
 
 #include "Map.h"
+#include "Player.h"
 
 ref class Game {
   Map^ map;
@@ -13,8 +14,9 @@ public:
     this->map = gcnew Map();
   }
 
-  void StartGeneration(Graphics^ g) {
-    this->map->StartGeneration(g);
+  void StartGeneration(Graphics^ g, Player^ player) {
+    this->map->StartGeneration(g, player);
+    this->map->MoveMap(player);
   }
 
   bool IsGenerated() {

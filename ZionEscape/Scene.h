@@ -36,55 +36,23 @@ public:
   //Temporal Image Selector -> Works as  a reference
   void ImageSelector() {
     BitmapManager^ bmpManager = BitmapManager::GetInstance();
-
-    if (!this->up && this->down && !this->right && !this->left)
-      this->background = bmpManager->GetImage("assets\\sprites\\colliders\\D.png");
-
-    else if (!this->up && this->down && this->right && !this->left)
-      this->background = bmpManager->GetImage("assets\\sprites\\colliders\\DR.png");
-
-    else if (this->up && this->down && this->right && this->left)
-      this->background = bmpManager->GetImage("assets\\sprites\\colliders\\G.png");
-
-    else if (!this->up && !this->down && !this->right && this->left)
-      this->background = bmpManager->GetImage("assets\\sprites\\colliders\\L.png");
-
-    else if (!this->up && !this->down && this->right && this->left)
-      this->background = bmpManager->GetImage("assets\\sprites\\colliders\\RL.png");
-
-    else if (!this->up && !this->down && this->right && !this->left)
-      this->background = bmpManager->GetImage("assets\\sprites\\colliders\\R.png");
-
-    else if (this->up && !this->down && !this->right && !this->left)
-      this->background = bmpManager->GetImage("assets\\sprites\\colliders\\T.png");
-
-    else if (this->up && this->down && !this->right && !this->left)
-      this->background = bmpManager->GetImage("assets\\sprites\\colliders\\TD.png");
-
-    else if (this->up && !this->down && !this->right && this->left)
-      this->background = bmpManager->GetImage("assets\\sprites\\colliders\\TL.png");
-
-    else if (this->up && !this->down && this->right && !this->left)
-      this->background = bmpManager->GetImage("assets\\sprites\\colliders\\TR.png");
-
-    else if (!this->up && this->down && !this->right && this->left)
-      this->background = bmpManager->GetImage("assets\\sprites\\colliders\\DL.png");
-
-    else if (!this->up && this->down && this->right && this->left)
-      this->background = bmpManager->GetImage("assets\\sprites\\colliders\\DRL.png");
-
-    else if (this->up && this->down && !this->right && this->left)
-      this->background = bmpManager->GetImage("assets\\sprites\\colliders\\TDL.png");
-
-    else if (this->up && this->down && this->right && !this->left)
-      this->background = bmpManager->GetImage("assets\\sprites\\colliders\\TDR.png");
-
-    else if (this->up && !this->down && this->right && this->left)
-      this->background = bmpManager->GetImage("assets\\sprites\\colliders\\TRL.png");
+    this->background = bmpManager->GetImage("assets\\sprites\\scenes\\scene_1.png");
   }
 
   void Draw(Graphics^ g) {
     g->DrawImage(this->background, this->drawingArea);
+  }
+
+  void DrawDoors(Graphics^ g) {
+    BitmapManager^ bmpManager = BitmapManager::GetInstance();
+    if (this->up)
+      g->DrawImage(bmpManager->GetImage("assets\\sprites\\scenes\\doors\\up_door.png"),this->GetPos().X+422, this->GetPos().Y+27);
+    if (this->down)
+      g->DrawImage(bmpManager->GetImage("assets\\sprites\\scenes\\doors\\down_door.png"), this->GetPos().X + 422, this->GetPos().Y + 520);
+    if (this->right)
+      g->DrawImage(bmpManager->GetImage("assets\\sprites\\scenes\\doors\\right_door.png"), this->GetPos().X + 831, this->GetPos().Y + 266);
+    if (this->left)
+      g->DrawImage(bmpManager->GetImage("assets\\sprites\\scenes\\doors\\left_door.png"), this->GetPos().X + 27, this->GetPos().Y + 266);
   }
 
   void CreateSpawner(Point pos) {
@@ -110,6 +78,10 @@ public:
 
   void DeleteSpawner(short n) {
     this->spawners->Remove(this->spawners[n]);
+  }
+
+  void SetPosition(Point pos) {
+    this->drawingArea.Location = pos;
   }
 
   void SetUp(bool value) {

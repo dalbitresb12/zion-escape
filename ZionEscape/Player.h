@@ -39,6 +39,11 @@ public:
         break;
     }
   }
+
+  bool Collides(Rectangle other) {
+    return this->drawingArea.IntersectsWith(other);
+  }
+
 };
 
 #endif // !_PLAYER_H_
