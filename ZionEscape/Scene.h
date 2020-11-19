@@ -4,26 +4,25 @@
 #define _SCENE_H_
 
 #include "SceneSpawner.h"
-#include "BitmapManager.h"
 
 using namespace System::Drawing;
 using namespace System::Collections::Generic;
 
 ref class Scene {
-  Bitmap^ background;
   bool up, down, right, left;
+  int background;
   List<SceneSpawner^>^ spawners;
   Rectangle drawingArea;
 
 public:
-  Scene(bool up, bool down, bool left, bool right, Point pos) {
+  Scene(bool up, bool down, bool left, bool right, int bg, Point pos, Size area) {
     this->spawners = gcnew List<SceneSpawner^>;
     this->up = up;
     this->down = down;
     this->right = right;
     this->left = left;
-    this->ImageSelector();
-    this->drawingArea = Rectangle(pos, this->background->Size);
+    this->background = bg;
+    this->drawingArea = Rectangle(pos, area);
   }
 
   ~Scene() {
@@ -33,31 +32,9 @@ public:
     delete this->spawners;
   }
 
-  //Temporal Image Selector -> Works as  a reference
-  void ImageSelector() {
-    BitmapManager^ bmpManager = BitmapManager::GetInstance();
-    this->background = bmpManager->GetImage("assets\\sprites\\scenes\\scene_1.png");
-  }
-
-  void Draw(Graphics^ g) {
-    g->DrawImage(this->background, this->drawingArea);
-  }
-
-  void DrawDoors(Graphics^ g) {
-    BitmapManager^ bmpManager = BitmapManager::GetInstance();
-    if (this->up)
-      g->DrawImage(bmpManager->GetImage("assets\\sprites\\scenes\\doors\\up_door.png"),this->GetPos().X+422, this->GetPos().Y+27);
-    if (this->down)
-      g->DrawImage(bmpManager->GetImage("assets\\sprites\\scenes\\doors\\down_door.png"), this->GetPos().X + 422, this->GetPos().Y + 520);
-    if (this->right)
-      g->DrawImage(bmpManager->GetImage("assets\\sprites\\scenes\\doors\\right_door.png"), this->GetPos().X + 831, this->GetPos().Y + 266);
-    if (this->left)
-      g->DrawImage(bmpManager->GetImage("assets\\sprites\\scenes\\doors\\left_door.png"), this->GetPos().X + 27, this->GetPos().Y + 266);
-  }
-
   void CreateSpawner(Point pos) {
     Point location;
-    Size size = Size(this->background->Width, this->background->Height);
+    Size size = Size(this->drawingArea.Width, this->drawingArea.Height);
     if (this->up) {
       location = Point(pos.X, pos.Y - size.Height);
       this->spawners->Add(gcnew SceneSpawner(Direction::Down, Rectangle(location, size)));
@@ -86,22 +63,22 @@ public:
 
   void SetUp(bool value) {
     this->up = value;
-    this->ImageSelector();
   }
 
   void SetDown(bool value) {
     this->down = value;
-    this->ImageSelector();
   }
 
   void SetRight(bool value) {
     this->right = value;
-    this->ImageSelector();
   }
 
   void SetLeft(bool value) {
     this->left = value;
-    this->ImageSelector();
+  }
+
+  int GetBackground() {
+    return this->background;
   }
 
   bool GetUp() {

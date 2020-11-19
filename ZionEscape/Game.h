@@ -10,8 +10,8 @@ ref class Game {
   Map^ map;
 
 public:
-  Game() {
-    this->map = gcnew Map();
+  Game(Size screenArea) {
+    this->map = gcnew Map(screenArea);
   }
 
   void StartGeneration(Graphics^ g, Player^ player) {

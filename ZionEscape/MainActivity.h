@@ -34,11 +34,15 @@ namespace ZionEscape {
 
   public:
     MainActivity() {
+
+      // Important call. Do not delete.
+      InitializeComponent();
+
       // User-defined code.
       BitmapManager^ bmpManager = BitmapManager::GetInstance();
       background = bmpManager->GetImage("assets\\sprites\\scenes\\scene_1.png");
 
-      this->game = gcnew Game();
+      this->game = gcnew Game(this->ClientRectangle.Size);
 
       unwalkableLayer = gcnew GraphicsPath();
       Point gridWorldSize = Point(background->Width, background->Height);
@@ -62,8 +66,6 @@ namespace ZionEscape {
       validKeys->Add(Keys::S);
       validKeys->Add(Keys::D);
 
-      // Important call. Do not delete.
-      InitializeComponent();
     }
 
   protected:

@@ -12,19 +12,23 @@ using namespace System::Drawing;
 ref class Map {
   List<Scene^>^ scenes;
   Random^ rnd;
+  BitmapManager^ bmpManager;
+  Size screenArea;
   int seed;
   int maxScenes;
   bool isGenerating;
   bool generated;
 
 public:
-  Map(): Map(40, 50, Environment::TickCount) {}
+  Map(Size screenArea): Map(40, 50, Environment::TickCount, screenArea) {}
 
-  Map(int seed): Map(40, 50, seed) {}
+  Map(int seed, Size screenArea): Map(40, 50, seed, screenArea) {}
 
-  Map(int min, int max): Map(min, max, Environment::TickCount) {}
+  Map(int min, int max, Size screenArea): Map(min, max, Environment::TickCount, screenArea) {}
 
-  Map(int min, int max, int seed) {
+  Map(int min, int max, int seed, Size screenArea) {
+    this->screenArea = screenArea;
+    this->bmpManager = BitmapManager::GetInstance();
     this->seed = seed;
     this->rnd = gcnew Random(seed);
     this->maxScenes = rnd->Next(min, max);
@@ -57,7 +61,8 @@ public:
   }
 
   void CreateScene(bool up, bool down, bool left, bool right, Point pos) {
-    this->scenes->Add(gcnew Scene(up, down, left, right, pos));
+    int bg = rnd->Next(0, 4);
+    this->scenes->Add(gcnew Scene(up, down, left, right, bg, pos, this->screenArea));
     this->scenes[this->scenes->Count - 1]->CreateSpawner(pos);
   }
 
@@ -168,12 +173,42 @@ public:
       for each (Scene ^ curScene in this->scenes) {
         // Draw the scene
         if (player->Collides(curScene->GetDrawingArea())) {
-          curScene->Draw(g);
+          //Draw the scene
+          this->DrawScene(g, curScene);
           //Draw their doors
-          curScene->DrawDoors(g);
+          this->DrawDoors(g, curScene);
         }
       }
     }
+  }
+
+  void DrawScene(Graphics^ g, Scene^ scene) {
+    switch (scene->GetBackground())
+    {
+    case 0:
+      g->DrawImage(bmpManager->GetImage("assets\\sprites\\scenes\\scene_1.png"), Point(0, 0));
+      break;
+    case 1:
+      g->DrawImage(bmpManager->GetImage("assets\\sprites\\scenes\\scene_2.png"), Point(0, 0));
+      break;
+    case 2:
+      g->DrawImage(bmpManager->GetImage("assets\\sprites\\scenes\\scene_3.png"), Point(0, 0));
+      break;
+    case 3:
+      g->DrawImage(bmpManager->GetImage("assets\\sprites\\scenes\\scene_4.png"), Point(0, 0));
+      break;
+    }
+  }
+
+  void DrawDoors(Graphics^ g, Scene^ scene) {
+    if (scene->GetUp())
+      g->DrawImage(bmpManager->GetImage("assets\\sprites\\scenes\\doors\\up_door.png"), Point(422, 27));
+    if (scene->GetDown())
+      g->DrawImage(bmpManager->GetImage("assets\\sprites\\scenes\\doors\\down_door.png"), Point(422, 520));
+    if (scene->GetRight())
+      g->DrawImage(bmpManager->GetImage("assets\\sprites\\scenes\\doors\\right_door.png"), Point(831, 266));
+    if (scene->GetLeft())
+      g->DrawImage(bmpManager->GetImage("assets\\sprites\\scenes\\doors\\left_door.png"),Point(27, 266));
   }
 
   void MoveMap(Player^ player) {
@@ -185,25 +220,25 @@ public:
     //If the player goes to the up door
     if (player->GetPosition().Y <= 60) {
       player->SetPosition(Point(446, 460));
-      add.Y = 624;
+      add.Y = this->screenArea.Height;
       changeposition = true;
     }
     //If the player goes to the down door
     else if (player->GetPosition().Y >= 530) {
       player->SetPosition(Point(446, 80));
-      add.Y = -624;
+      add.Y = -this->screenArea.Height;
       changeposition = true;
     }
     //If the player goes to the left door
     else if (player->GetPosition().X <= 70) {
       player->SetPosition(Point(795, 266));
-      add.X = 936;
+      add.X = this->screenArea.Width;
       changeposition = true;
     }
     //If the player goes to the right door
     else if (player->GetPosition().X >= 850) {
       player->SetPosition(Point(90, 266));
-      add.X = -936;
+      add.X = -this->screenArea.Width;
       changeposition = true;
     }
     //Did the player go to a door?
