@@ -13,6 +13,7 @@ ref class Map {
   List<Scene^>^ scenes;
   Random^ rnd;
   BitmapManager^ bmpManager;
+  Bitmap^ doorImage;
   Size screenArea;
   int seed;
   int maxScenes;
@@ -29,6 +30,7 @@ public:
   Map(int min, int max, int seed, Size screenArea) {
     this->screenArea = screenArea;
     this->bmpManager = BitmapManager::GetInstance();
+    this->doorImage = gcnew Bitmap(bmpManager->GetImage("assets\\sprites\\scenes\\doors\\door1.png"));
     this->seed = seed;
     this->rnd = gcnew Random(seed);
     this->maxScenes = rnd->Next(min, max);
@@ -40,6 +42,7 @@ public:
       delete scene;
     this->scenes->Clear();
     delete this->scenes;
+    delete this->doorImage;
     delete this->rnd;
   }
 
@@ -201,14 +204,34 @@ public:
   }
 
   void DrawDoors(Graphics^ g, Scene^ scene) {
-    if (scene->GetUp())
-      g->DrawImage(bmpManager->GetImage("assets\\sprites\\scenes\\doors\\up_door.png"), Point(422, 27));
-    if (scene->GetDown())
-      g->DrawImage(bmpManager->GetImage("assets\\sprites\\scenes\\doors\\down_door.png"), Point(422, 520));
-    if (scene->GetRight())
-      g->DrawImage(bmpManager->GetImage("assets\\sprites\\scenes\\doors\\right_door.png"), Point(831, 266));
-    if (scene->GetLeft())
-      g->DrawImage(bmpManager->GetImage("assets\\sprites\\scenes\\doors\\left_door.png"),Point(27, 266));
+
+    if (scene->GetUp()) {
+      //Draw the image
+      g->DrawImage(doorImage, Point(422, 27));
+    }
+
+    if (scene->GetRight()) {
+      //Image is rotated
+      doorImage->RotateFlip(RotateFlipType::Rotate90FlipNone);
+      g->DrawImage(doorImage, Point(831, 266));
+      //Image returns to its original angle
+      doorImage->RotateFlip(RotateFlipType::Rotate270FlipNone);
+    }
+
+    if (scene->GetDown()) {
+      //Image is rotated
+      doorImage->RotateFlip(RotateFlipType::Rotate180FlipNone);
+      g->DrawImage(doorImage, Point(422, 520));
+      doorImage->RotateFlip(RotateFlipType::Rotate180FlipNone);
+    }
+    
+    if (scene->GetLeft()) {
+      //Image is rotated
+      doorImage->RotateFlip(RotateFlipType::Rotate270FlipNone);
+      g->DrawImage(doorImage, Point(27, 266));
+      //Image returns to its original angle
+      doorImage->RotateFlip(RotateFlipType::Rotate90FlipNone);
+    }
   }
 
   void MoveMap(Player^ player) {
