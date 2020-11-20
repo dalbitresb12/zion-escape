@@ -50,9 +50,9 @@ public:
   }
   
   //Set the message and len
-  void SetMessage(System::Windows::Forms::Label^ label) {
-    this->messagebox->SetTxt(label->Text);
-    this->messagebox->SetLen(this->messagebox->GetTxt()->Length);
+  void SetMessage(Label^ label) {
+    this->messagebox->SetText(label->Text);
+    this->messagebox->SetLength(this->messagebox->GetText()->Length);
     label->Text = "";
   }
 
@@ -84,7 +84,7 @@ public:
     // Counter + 1
     this->messagebox->SetCounter(1);
     //If the counter is greater to the length of the message
-    if (this->messagebox->GetCounter() > this->messagebox->GetLen()) {
+    if (this->messagebox->GetCounter() > this->messagebox->GetLength()) {
       timer->Interval = 100;
       // NextMessage +1
       this->messagebox->SetNextMessage(1);
@@ -103,7 +103,7 @@ public:
         //NextMessage return to 0
         this->messagebox->SetNextMessage(-timeNextMessage);
         //Counter returns to 0
-        this->messagebox->SetCounter(- (this->messagebox->GetLen() + timeNextMessage));
+        this->messagebox->SetCounter(- (this->messagebox->GetLength() + timeNextMessage));
         //Set the new message
         switch (this->messagebox->GetOrder())
         {
@@ -130,7 +130,7 @@ public:
     }
     else {
       //Print a letter of the sring in the label
-      label->Text = this->messagebox->GetTxt()->Substring(0, this->messagebox->GetCounter());
+      label->Text = this->messagebox->GetText()->Substring(0, this->messagebox->GetCounter());
     }
   }
 };

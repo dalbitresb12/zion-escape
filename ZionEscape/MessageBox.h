@@ -7,19 +7,17 @@
 
 ref class Messagebox {
   bool activated;
-  BitmapManager^ bmpManager;
-  int counter, len, order, nextMessage;
-  String^ txt;
+  unsigned int counter, length, order, nextMessage;
+  String^ text;
 public:
   Messagebox() {
-    this->bmpManager = BitmapManager::GetInstance();
-    this->counter = len = order = nextMessage = 0;
+    this->counter = length = order = nextMessage = 0;
   }
   ~Messagebox() {
-    delete this->bmpManager;
-    delete this->txt;
+    delete this->text;
   }
   void Draw(Graphics^ g) {
+    BitmapManager^ bmpManager = BitmapManager::GetInstance();
     //Select the image and the position
     g->DrawImage(bmpManager->GetImage("assets\\sprites\\misc\\messagebox.png"), Point(101,230));
   }
@@ -40,36 +38,36 @@ public:
     this->order += value;
   }
 
-  void SetLen(int value) {
-    this->len = value;
+  void SetLength(int value) {
+    this->length = value;
   }
 
-  void SetTxt(String^ txt) {
-    this->txt = txt;
+  void SetText(String^ txt) {
+    this->text = txt;
   }
 
   bool GetActivated() {
     return this->activated;
   }
 
-  int GetCounter() {
+  unsigned int GetCounter() {
     return this->counter;
   }
 
-  int GetNextMessage() {
+  unsigned int GetNextMessage() {
     return this->nextMessage;
   }
 
-  int GetLen() {
-    return this->len;
+  unsigned int GetLength() {
+    return this->length;
   }
 
-  int GetOrder() {
+  unsigned int GetOrder() {
     return this->order;
   }
 
-  String^ GetTxt() {
-    return this->txt;
+  String^ GetText() {
+    return this->text;
   }
 
 };
