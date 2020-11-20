@@ -101,7 +101,7 @@ namespace ZionEscape {
       this->MessageLabel->Font = (gcnew System::Drawing::Font(L"High Tower Text", 20.25F, System::Drawing::FontStyle::Bold, System::Drawing::GraphicsUnit::Point,
         static_cast<System::Byte>(0)));
       this->MessageLabel->ForeColor = System::Drawing::Color::Black;
-      this->MessageLabel->Location = System::Drawing::Point(144, 264);
+      this->MessageLabel->Location = System::Drawing::Point(144, 270);
       this->MessageLabel->Name = L"MessageLabel";
       this->MessageLabel->Size = System::Drawing::Size(417, 32);
       this->MessageLabel->TabIndex = 0;

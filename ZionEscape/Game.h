@@ -68,19 +68,17 @@ public:
     }
     else if (this->messagebox->GetOrder() % 2) {
       timer->Interval = 50;
-      label->ForeColor = Color::White;
+      label->ForeColor = Color::LightSteelBlue;
     }
     else {
+
       if (this->messagebox->GetOrder() != 4)
-        timer->Interval = 100;
+        timer->Interval = 80;
       //At the last message of the assasin, go faster
       else
-        timer->Interval = 40;
+        timer->Interval = 20;
 
-      if (label->ForeColor == Color::White)
-        label->ForeColor = Color::Red;
-      else
-        label->ForeColor = Color::White;
+      label->ForeColor = Color::Crimson;
     }
 
     // Counter + 1
@@ -113,7 +111,7 @@ public:
           label->Text = "Debemos evitar que salga del laberinto, no podremos\nsolos. Necesitamos de ustedes, asesinos.";
           break;
         case 1:
-          label->Text = "Que halagadoras palabras, pero no es suficiente. . .";
+          label->Text = "Que halagadoras palabras, pero no es suficiente . . .";
           break;
         case 2:
           label->Text = "Obtener el poder absoluto de Zion no es suficiente?\nVan a tener todo lo que ustedes deseen!";
