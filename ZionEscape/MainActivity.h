@@ -100,8 +100,8 @@ namespace ZionEscape {
       this->MessageLabel->BackColor = System::Drawing::Color::Transparent;
       this->MessageLabel->Font = (gcnew System::Drawing::Font(L"High Tower Text", 20.25F, System::Drawing::FontStyle::Bold, System::Drawing::GraphicsUnit::Point,
         static_cast<System::Byte>(0)));
-      this->MessageLabel->ForeColor = System::Drawing::Color::White;
-      this->MessageLabel->Location = System::Drawing::Point(155, 271);
+      this->MessageLabel->ForeColor = System::Drawing::Color::Black;
+      this->MessageLabel->Location = System::Drawing::Point(144, 264);
       this->MessageLabel->Name = L"MessageLabel";
       this->MessageLabel->Size = System::Drawing::Size(417, 32);
       this->MessageLabel->TabIndex = 0;
@@ -145,13 +145,17 @@ namespace ZionEscape {
   }
 
   private: void MainActivity_KeyDown(Object^ sender, KeyEventArgs^ e) {
-    // Temporary Map Seed Print
-    if (e->KeyCode == Keys::P) {
-      Debug::WriteLine("Seed: {0}", this->game->GetMapSeed());
-      //Message Box
+    //Temporary Message Box
+    if (e->KeyCode == Keys::M) {
       this->game->StartMessagebox();
       this->game->SetMessage(this->MessageLabel);
       this->MessageTimer->Start();
+      return;
+    }
+
+    // Temporary Map Seed Print
+    if (e->KeyCode == Keys::P) {
+      Debug::WriteLine("Seed: {0}", this->game->GetMapSeed());
       return;
     }
 
@@ -206,7 +210,7 @@ namespace ZionEscape {
 }
   private: System::Void MessageTimer_Tick(System::Object^ sender, System::EventArgs^ e) {
     this->MessageLabel->Visible = true;
-    this->game->PrintLetter(this->MessageLabel);
+    this->game->PrintLetter(this->MessageLabel, this->MessageTimer);
   }
 };
 }

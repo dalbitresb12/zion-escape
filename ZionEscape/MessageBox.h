@@ -8,12 +8,12 @@
 ref class Messagebox {
   bool activated;
   BitmapManager^ bmpManager;
-  int counter, len;
+  int counter, len, order, nextMessage;
   String^ txt;
 public:
   Messagebox() {
     this->bmpManager = BitmapManager::GetInstance();
-    this->counter = len = 0;
+    this->counter = len = order = nextMessage = 0;
   }
   ~Messagebox() {
     delete this->bmpManager;
@@ -32,6 +32,14 @@ public:
     this->counter += value;
   }
 
+  void SetNextMessage(int value) {
+    this->nextMessage += value;
+  }
+
+  void SetOrder(int value) {
+    this->order += value;
+  }
+
   void SetLen(int value) {
     this->len = value;
   }
@@ -48,8 +56,16 @@ public:
     return this->counter;
   }
 
+  int GetNextMessage() {
+    return this->nextMessage;
+  }
+
   int GetLen() {
     return this->len;
+  }
+
+  int GetOrder() {
+    return this->order;
   }
 
   String^ GetTxt() {
