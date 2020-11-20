@@ -30,7 +30,6 @@ public:
   Map(int min, int max, int seed, Size screenArea) {
     this->screenArea = screenArea;
     this->bmpManager = BitmapManager::GetInstance();
-    this->doorImage = gcnew Bitmap(bmpManager->GetImage("assets\\sprites\\scenes\\doors\\door1.png"));
     this->seed = seed;
     this->rnd = gcnew Random(seed);
     this->maxScenes = rnd->Next(min, max);
@@ -42,7 +41,6 @@ public:
       delete scene;
     this->scenes->Clear();
     delete this->scenes;
-    delete this->doorImage;
     delete this->rnd;
   }
 
@@ -186,6 +184,9 @@ public:
   }
 
   void DrawScene(Graphics^ g, Scene^ scene) {
+    //Select an image to the door
+    this->doorImage = bmpManager->GetImage("assets\\sprites\\scenes\\doors\\door1.png");
+    //If you want, you can select, in the switch, a door depends of the scene
     switch (scene->GetBackground())
     {
     case 0:
@@ -204,7 +205,6 @@ public:
   }
 
   void DrawDoors(Graphics^ g, Scene^ scene) {
-
     if (scene->GetUp()) {
       //Draw the image
       g->DrawImage(doorImage, Point(422, 27));
