@@ -1,5 +1,6 @@
 #pragma once
 #include "Game.h"
+
 #include "BitmapManager.h"
 #include "Pathfinder.h"
 #include "Grid.h"
@@ -30,7 +31,11 @@ namespace ZionEscape {
     List<NPC^>^ npcs;
 
     List<Keys>^ keysPressed;
-    List<Keys>^ validKeys;
+  private: System::Windows::Forms::Label^ MessageLabel;
+
+  private: System::Windows::Forms::Timer^ MessageTimer;
+
+  List<Keys>^ validKeys;
 
   public:
     MainActivity() {
@@ -79,6 +84,8 @@ namespace ZionEscape {
     void InitializeComponent() {
       this->components = (gcnew System::ComponentModel::Container());
       this->MovementTimer = (gcnew System::Windows::Forms::Timer(this->components));
+      this->MessageLabel = (gcnew System::Windows::Forms::Label());
+      this->MessageTimer = (gcnew System::Windows::Forms::Timer(this->components));
       this->SuspendLayout();
       // 
       // MovementTimer
@@ -87,18 +94,38 @@ namespace ZionEscape {
       this->MovementTimer->Interval = 30;
       this->MovementTimer->Tick += gcnew System::EventHandler(this, &MainActivity::MovementTimer_Tick);
       // 
+      // MessageLabel
+      // 
+      this->MessageLabel->AutoSize = true;
+      this->MessageLabel->BackColor = System::Drawing::Color::Transparent;
+      this->MessageLabel->Font = (gcnew System::Drawing::Font(L"High Tower Text", 20.25F, System::Drawing::FontStyle::Bold, System::Drawing::GraphicsUnit::Point,
+        static_cast<System::Byte>(0)));
+      this->MessageLabel->ForeColor = System::Drawing::Color::White;
+      this->MessageLabel->Location = System::Drawing::Point(155, 271);
+      this->MessageLabel->Name = L"MessageLabel";
+      this->MessageLabel->Size = System::Drawing::Size(417, 32);
+      this->MessageLabel->TabIndex = 0;
+      this->MessageLabel->Text = L"Conque buscan nuestra ayuda . . .";
+      this->MessageLabel->Visible = false;
+      // 
+      // MessageTimer
+      // 
+      this->MessageTimer->Tick += gcnew System::EventHandler(this, &MainActivity::MessageTimer_Tick);
+      // 
       // MainActivity
       // 
       this->AutoScaleDimensions = System::Drawing::SizeF(6, 13);
       this->AutoScaleMode = System::Windows::Forms::AutoScaleMode::Font;
       this->ClientSize = System::Drawing::Size(936, 624);
+      this->Controls->Add(this->MessageLabel);
       this->DoubleBuffered = true;
       this->Name = L"MainActivity";
-      this->Text = L"Zion Escape";
+      this->Load += gcnew System::EventHandler(this, &MainActivity::MainActivity_Load);
       this->Paint += gcnew System::Windows::Forms::PaintEventHandler(this, &MainActivity::MainActivity_Paint);
       this->KeyDown += gcnew System::Windows::Forms::KeyEventHandler(this, &MainActivity::MainActivity_KeyDown);
       this->KeyUp += gcnew System::Windows::Forms::KeyEventHandler(this, &MainActivity::MainActivity_KeyUp);
       this->ResumeLayout(false);
+      this->PerformLayout();
 
     }
 #pragma endregion
@@ -111,12 +138,20 @@ namespace ZionEscape {
     }
 
     this->player->Draw(world);
+
+    //This have to be in front of everything, because the message box have to be in front of any image
+    this->game->DrawMessagebox(world);
+
   }
 
   private: void MainActivity_KeyDown(Object^ sender, KeyEventArgs^ e) {
     // Temporary Map Seed Print
     if (e->KeyCode == Keys::P) {
       Debug::WriteLine("Seed: {0}", this->game->GetMapSeed());
+      //Message Box
+      this->game->StartMessagebox();
+      this->game->SetMessage(this->MessageLabel);
+      this->MessageTimer->Start();
       return;
     }
 
@@ -166,6 +201,12 @@ namespace ZionEscape {
         Pathfinder::FindPath(mapGrid, npc->GetPosition(), ally->GetPosition(), npc);
       }
     }
+  }
+  private: System::Void MainActivity_Load(System::Object^ sender, System::EventArgs^ e) {
+}
+  private: System::Void MessageTimer_Tick(System::Object^ sender, System::EventArgs^ e) {
+    this->MessageLabel->Visible = true;
+    this->game->PrintLetter(this->MessageLabel);
   }
 };
 }

@@ -182,10 +182,10 @@
     </ClInclude>
     <ClInclude Include="Map.h" />
     <ClInclude Include="MathUtils.h" />
+    <ClInclude Include="MessageBox.h" />
     <ClInclude Include="Node.h" />
     <ClInclude Include="NPC.h" />
     <ClInclude Include="Pathfinder.h" />
-    
     <ClInclude Include="pch.h" />
     <ClInclude Include="Player.h" />
     <ClInclude Include="Resource.h" />
