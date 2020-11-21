@@ -138,10 +138,9 @@ namespace ZionEscape {
     }
 
     this->player->Draw(world);
-
+    this->player->DrawHearts(world);
     //This have to be in front of everything, because the message box have to be in front of any image
     this->game->DrawMessagebox(world);
-
   }
 
   private: void MainActivity_KeyDown(Object^ sender, KeyEventArgs^ e) {
