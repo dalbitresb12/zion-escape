@@ -115,6 +115,7 @@ namespace ZionEscape {
     }
 
     this->player->Draw(world);
+    this->player->DrawHearts(world);
   }
 
   private: void MainActivity_KeyDown(Object^ sender, KeyEventArgs^ e) {
