@@ -14,7 +14,7 @@ ref class NPC abstract : public Entity {
 public:
   List<Node^>^ path;
 
-  NPC(EntityType entityType, Point pos, int velocity, float healthPoints, float damagePoints)
+  NPC(EntityType entityType, Point pos, unsigned short velocity, float healthPoints, float damagePoints)
     : Entity(entityType, pos, velocity, healthPoints, damagePoints) {}
 
   bool HasEndedPath() {
