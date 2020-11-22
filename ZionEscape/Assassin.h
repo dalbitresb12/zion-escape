@@ -35,6 +35,11 @@ public:
         break;
     }
   }
+
+  void StopAnimation() override {
+      SetAnimatable(false);
+      SetCol(1);
+  }
 };
 
 #endif // !_ASSASSIN_H_

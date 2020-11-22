@@ -22,6 +22,7 @@ namespace ZionEscape {
   public ref class MainActivity : public Form {
     System::ComponentModel::IContainer^ components;
     System::Windows::Forms::Timer^ MovementTimer;
+    System::Windows::Forms::Timer^ AnimationTimer;
     // User-defined properties.
     Game^ game;
     Bitmap^ background;
@@ -86,14 +87,17 @@ namespace ZionEscape {
     void InitializeComponent() {
       this->components = (gcnew System::ComponentModel::Container());
       this->MovementTimer = (gcnew System::Windows::Forms::Timer(this->components));
-      this->MessageLabel = (gcnew System::Windows::Forms::Label());
       this->MessageTimer = (gcnew System::Windows::Forms::Timer(this->components));
+      this->AnimationTimer = (gcnew System::Windows::Forms::Timer(this->components));
+
+      this->MessageLabel = (gcnew System::Windows::Forms::Label());
+
       this->SuspendLayout();
       // 
       // MovementTimer
       // 
       this->MovementTimer->Enabled = true;
-      this->MovementTimer->Interval = 30;
+      this->MovementTimer->Interval = 20;
       this->MovementTimer->Tick += gcnew System::EventHandler(this, &MainActivity::MovementTimer_Tick);
       // 
       // MessageLabel
@@ -113,6 +117,11 @@ namespace ZionEscape {
       // MessageTimer
       // 
       this->MessageTimer->Tick += gcnew System::EventHandler(this, &MainActivity::MessageTimer_Tick);
+      // AnimationTimer
+      // 
+      this->AnimationTimer->Enabled = true;
+      this->AnimationTimer->Interval = 80;
+      this->AnimationTimer->Tick += gcnew System::EventHandler(this, &MainActivity::AnimationTimer_Tick);
       // 
       // MainActivity
       // 
@@ -121,8 +130,8 @@ namespace ZionEscape {
       this->ClientSize = System::Drawing::Size(936, 624);
       this->Controls->Add(this->MessageLabel);
       this->DoubleBuffered = true;
+      this->Margin = System::Windows::Forms::Padding(4);
       this->Name = L"MainActivity";
-      this->Load += gcnew System::EventHandler(this, &MainActivity::MainActivity_Load);
       this->Paint += gcnew System::Windows::Forms::PaintEventHandler(this, &MainActivity::MainActivity_Paint);
       this->KeyDown += gcnew System::Windows::Forms::KeyEventHandler(this, &MainActivity::MainActivity_KeyDown);
       this->KeyUp += gcnew System::Windows::Forms::KeyEventHandler(this, &MainActivity::MainActivity_KeyUp);
@@ -208,11 +217,18 @@ namespace ZionEscape {
       }
     }
   }
-  private: System::Void MainActivity_Load(System::Object^ sender, System::EventArgs^ e) {
-}
-  private: System::Void MessageTimer_Tick(System::Object^ sender, System::EventArgs^ e) {
+  
+   private: System::Void MessageTimer_Tick(System::Object^ sender, System::EventArgs^ e) {
     this->MessageLabel->Visible = true;
     this->game->PrintLetter(this->MessageLabel, this->MessageTimer);
-  }
-};
+   }
+  
+   private: void AnimationTimer_Tick(Object^ sender, EventArgs^ e) {
+    for each (NPC ^ npc in npcs) {
+      npc->ShiftCol();
+    }
+
+    player->ShiftCol();
+   }
+  };
 }

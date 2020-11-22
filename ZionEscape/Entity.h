@@ -27,6 +27,7 @@ public:
     this->healthPoints = healthPoints;
     this->damagePoints = damagePoints;
     this->movable = entityType != EntityType::Obstacle;
+    StopAnimation();
   }
 
   EntityType GetEntityType() {
