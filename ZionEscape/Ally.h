@@ -13,7 +13,7 @@ using namespace System::Drawing;
 ref class Ally : public NPC {
 public:
   Ally(Point pos)
-    : NPC(EntityType::Ally, pos, 2, 1.f, 0.f) {
+    : NPC(EntityType::Ally, pos, 2U, 1.f, 0.f) {
     BitmapManager^ bmpManager = BitmapManager::GetInstance();
     Bitmap^ image = bmpManager->GetImage("assets\\sprites\\aliados\\aliado-bueno.png");
     this->SetImage(image, 4, 4);

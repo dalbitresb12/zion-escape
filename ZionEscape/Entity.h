@@ -16,10 +16,10 @@ protected:
   bool movable;
   float healthPoints;
   float damagePoints;
-  int velocity;
+  unsigned short velocity;
 
 public:
-  Entity(EntityType entityType, Point pos, int velocity, float healthPoints, float damagePoints)
+  Entity(EntityType entityType, Point pos, unsigned short velocity, float healthPoints, float damagePoints)
     : Sprite(entityType != EntityType::Obstacle) {
     this->entityType = entityType;
     this->drawingArea.Location = pos;
