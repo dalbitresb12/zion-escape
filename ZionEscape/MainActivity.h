@@ -131,6 +131,11 @@ namespace ZionEscape {
       Debug::WriteLine("Seed: {0}", this->game->GetMapSeed());
       return;
     }
+    // Temporary substract health points from the player
+    if (e->KeyCode == Keys::B) {
+      this->player->SetHealth(this->player->GetHealth() - 1);
+      return;
+    }
 
     if (!validKeys->Contains(e->KeyCode)) return;
 
@@ -160,6 +165,11 @@ namespace ZionEscape {
       if (!validKeys->Contains(key)) break;
       player->Move(key);
     }
+
+    if (this->player->GetHealth() <= 2) {
+
+    }
+
     Refresh();
   }
 
