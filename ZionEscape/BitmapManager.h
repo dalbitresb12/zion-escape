@@ -20,6 +20,7 @@ private:
   BitmapManager() {
     images = gcnew Dictionary<String^, Bitmap^>();
   }
+
   ~BitmapManager() {
     for each (KeyValuePair<String^, Bitmap^> img in images) {
       if (img.Value != nullptr)

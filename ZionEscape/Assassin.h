@@ -15,6 +15,7 @@ public:
     Bitmap^ image = bmpManager->GetImage("assets\\sprites\\asesinos\\asesino.png");
     this->SetImage(image, 3, 4);
   }
+  ~Assassin() {}
 
   void SetSpriteDirection(Direction direction) override {
     switch (direction) {

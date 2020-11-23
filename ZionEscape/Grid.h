@@ -31,6 +31,9 @@ public:
     gridSize = Point::Round(PointF(gridWorldSize.X / nodeDiameter.X, gridWorldSize.Y / nodeDiameter.Y));
     CreateGrid();
   }
+  ~Grid() {
+    delete unwalkableLayer;
+  }
 
 private:
   void CreateGrid() {

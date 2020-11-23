@@ -13,6 +13,7 @@ using namespace System::Collections::Generic;
 ref class Pathfinder {
 private:
   Pathfinder() {}
+  ~Pathfinder() {}
 
 public:
   static void FindPath(Grid^ grid, Point startPos, Point targetPos, NPC^ npc) {

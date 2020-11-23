@@ -33,6 +33,7 @@ public:
     this->row = 0;
     this->animatable = animatable;
   }
+  ~Sprite() {}
 
   void SetImage(Bitmap^ image, short nCols, short nRows) {
     this->image = image;

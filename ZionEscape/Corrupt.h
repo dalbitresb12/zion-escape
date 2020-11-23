@@ -15,6 +15,7 @@ public:
     Bitmap^ image = bmpManager->GetImage("assets\\sprites\\corruptos\\corrupto.png");
     this->SetImage(image, 4, 4);
   }
+  ~Corrupt() {}
 
   void ConvertToAlly() {
     BitmapManager^ bmpManager = BitmapManager::GetInstance();

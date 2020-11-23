@@ -23,6 +23,9 @@ public:
     if(this->messagebox!=nullptr)
       delete this->messagebox;
   }
+  ~Game() {
+    delete map;
+  }
 
   void StartGeneration(Graphics^ g) {
     this->map->StartGeneration(g);
