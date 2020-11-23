@@ -7,6 +7,7 @@
 #include "Ally.h"
 #include "Assassin.h"
 #include "Corrupt.h"
+#include "Portal.h"
 
 namespace ZionEscape {
   using namespace System;
@@ -28,6 +29,7 @@ namespace ZionEscape {
     GraphicsPath^ unwalkableLayer;
     Grid^ mapGrid;
     Player^ player;
+    List<Portal^>^ portals;
     List<NPC^>^ npcs;
 
     List<Keys>^ keysPressed;
@@ -74,6 +76,16 @@ namespace ZionEscape {
       if (components) {
         delete components;
       }
+
+      //DELETE PORTALS
+      if (portals != nullptr) {
+        for each (Portal ^ portal in this->portals)
+          delete portal;
+        this->portals->Clear();
+        delete this->portals;
+      }
+      
+      //DELETE GAME
       delete game;
     }
 
@@ -120,7 +132,13 @@ namespace ZionEscape {
     for each (NPC ^ npc in npcs) {
       npc->Draw(world);
     }
-
+    // DRAW PORTALS
+    if (portals != nullptr) {
+      for each (Portal ^ portal in portals) {
+        portal->Draw(world);
+      }
+    }
+      
     this->player->Draw(world);
     this->player->DrawHearts(world);
   }
@@ -165,9 +183,41 @@ namespace ZionEscape {
       if (!validKeys->Contains(key)) break;
       player->Move(key);
     }
-
+    //If the health of the player is less or equal to 2, the portals will appear
     if (this->player->GetHealth() <= 2) {
-
+      //If the list of portals doesnt exist
+      if (portals == nullptr) {
+        portals = gcnew List<Portal^>;
+        //Create the first portal at the position of the player
+        portals->Add(gcnew Portal(this->player->GetPosition()));
+        //Create the second portal (select the position of the other portal)
+        Point pos = Point(300, 200);
+        portals->Add(gcnew Portal(pos));
+      }
+      else {
+        for (short i = 0; i < portals->Count; i++)
+          if (portals[i]->Collision(this->player)) {
+            //If the player collides with the portal, its cooldown reduces by 1
+            portals[i]->SetCooldown(portals[i]->GetCooldown() - 1);
+            //If the cooldown of the portal is 0, the player will be teleported
+            if (portals[i]->GetCooldown() <= 0) {
+              //Set the position of player to the other portal
+              Point pos;
+              if (i % 2 == 0)
+                pos = portals[++i]->GetPosition();
+              else
+                pos = portals[--i]->GetPosition();
+              //Center the position, so the player will be on the center of the portal
+              pos.X -= (this->player->GetCropArea().Size.Width)/2;
+              pos.Y -= (this->player->GetCropArea().Size.Height)/2;
+              //Change the position of the player
+              this->player->SetPosition(pos);
+            }
+          }
+          else
+            //If the player doesnt collide, the cooldown of the portal is half a second
+            portals[i]->SetCooldown(50);
+      }
     }
 
     Refresh();
@@ -193,6 +243,11 @@ namespace ZionEscape {
   private: void AnimationTimer_Tick(Object^ sender, EventArgs^ e) {
     for each (NPC ^ npc in npcs) {
       npc->ShiftCol();
+    }
+    //Animate portal
+    if (portals != nullptr) {
+      for each (Portal ^ portal in portals)
+        portal->ShiftCol();
     }
 
     player->ShiftCol();
