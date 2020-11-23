@@ -17,6 +17,15 @@ public:
   NPC(EntityType entityType, Point pos, unsigned short velocity, float healthPoints, float damagePoints)
     : Entity(entityType, pos, velocity, healthPoints, damagePoints) {}
 
+  ~NPC() {
+    if (path != nullptr) {
+      for each (Node ^ path in this->path)
+        delete path;
+      this->path->Clear();
+      delete this->path;
+    }
+  }
+
   bool HasEndedPath() {
     return pathEnded;
   }

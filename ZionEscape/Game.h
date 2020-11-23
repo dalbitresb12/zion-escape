@@ -13,6 +13,9 @@ public:
   Game(Size screenArea) {
     this->map = gcnew Map(screenArea);
   }
+  ~Game() {
+    delete map;
+  }
 
   void StartGeneration(Graphics^ g, Player^ player) {
     this->map->StartGeneration(g, player);

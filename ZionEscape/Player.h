@@ -20,6 +20,8 @@ public:
     this->SetImage(image, nCols, nRows);
   }
 
+  ~Player() {}
+
   void SetSpriteDirection(Direction direction) override {
     switch (direction) {
       case Direction::Up:

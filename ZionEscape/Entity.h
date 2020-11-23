@@ -29,6 +29,7 @@ public:
     this->movable = entityType != EntityType::Obstacle;
     StopAnimation();
   }
+  ~Entity() {}
 
   EntityType GetEntityType() {
     return entityType;

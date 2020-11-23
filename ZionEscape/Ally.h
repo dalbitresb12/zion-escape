@@ -18,6 +18,7 @@ public:
     Bitmap^ image = bmpManager->GetImage("assets\\sprites\\aliados\\aliado-bueno.png");
     this->SetImage(image, 4, 4);
   }
+  ~Ally() {}
 
   bool ShouldDie() {
     Random r;
