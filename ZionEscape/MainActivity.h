@@ -8,6 +8,7 @@
 #include "Ally.h"
 #include "Assassin.h"
 #include "Corrupt.h"
+#include "MessageBox.h"
 
 namespace ZionEscape {
   using namespace System;
@@ -30,6 +31,7 @@ namespace ZionEscape {
     Grid^ mapGrid;
     Player^ player;
     List<NPC^>^ npcs;
+    Messagebox^ messagebox;
 
     List<Keys>^ keysPressed;
   private: System::Windows::Forms::Label^ MessageLabel;
@@ -79,6 +81,10 @@ namespace ZionEscape {
       if (components) {
         delete components;
       }
+      //Delete messagebox
+      if (this->messagebox != nullptr)
+        delete this->messagebox;
+
       delete game;
     }
 
@@ -150,17 +156,24 @@ namespace ZionEscape {
 
     this->player->Draw(world);
     this->player->DrawHearts(world);
+
     //This have to be in front of everything, because the message box have to be in front of any image
-    this->game->DrawMessagebox(world);
+    if (messagebox != nullptr && messagebox->GetActivated()) {
+      this->messagebox->Draw(world);
+    }
   }
 
   private: void MainActivity_KeyDown(Object^ sender, KeyEventArgs^ e) {
     //Temporary Message Box
     if (e->KeyCode == Keys::M) {
-      this->game->StartMessagebox();
-      this->game->SetMessage(this->MessageLabel);
-      this->MessageTimer->Start();
-      return;
+      if (this->messagebox == nullptr && this->MessageLabel != nullptr) {
+        this->messagebox = gcnew Messagebox(this->MessageLabel);
+        //Label is visible
+        this->MessageLabel->Visible = true;
+        //The timer start
+        this->MessageTimer->Start();
+        return;
+      }
     }
 
     // Temporary Map Seed Print
@@ -176,6 +189,17 @@ namespace ZionEscape {
       player->StartAnimation();
       ResetPathfinders();
     }
+
+    //Delete MessageBox if is not activated
+    if (messagebox != nullptr) {
+      if (!this->messagebox->GetActivated()){
+        this->messagebox = nullptr;
+        this->MessageLabel = nullptr;
+        delete this->messagebox;
+        delete this->MessageLabel;
+      }
+    }
+
   }
 
   private: void MainActivity_KeyUp(Object^ sender, KeyEventArgs^ e) {
@@ -219,8 +243,8 @@ namespace ZionEscape {
   }
   
    private: System::Void MessageTimer_Tick(System::Object^ sender, System::EventArgs^ e) {
-    this->MessageLabel->Visible = true;
-    this->game->PrintLetter(this->MessageLabel, this->MessageTimer);
+     //Each tick, print a letter
+    this->messagebox->PrintLetter(this->MessageLabel, this->MessageTimer);
    }
   
    private: void AnimationTimer_Tick(Object^ sender, EventArgs^ e) {
