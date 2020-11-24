@@ -4,23 +4,29 @@
 #define _SCENESPAWNER_H_
 
 #include "Enums.h"
+
 using namespace System::Drawing;
 
 ref class SceneSpawner {
-  Rectangle drawingArea;
-  //The new scene must have a door looking in the direction
+  // The new scene must have a door looking in the direction
   Direction parentDirection;
+  // Only used to check collisions
+  Point position;
  
 public:
-  SceneSpawner(Direction parentDirection, Rectangle drawingArea) {
-    this->drawingArea = drawingArea;
+  SceneSpawner(Direction parentDirection, Point position) {
     this->parentDirection = parentDirection;
+    this->position = position;
   }
+
+  ~SceneSpawner() {}
+
   Direction GetParentDirection() {
-    return this->parentDirection;
+    return parentDirection;
   }
+
   Point GetPos() {
-    return this->drawingArea.Location;
+    return position;
   }
 };
 

@@ -10,7 +10,7 @@ using namespace System;
 using namespace System::Drawing;
 using namespace System::Drawing::Drawing2D;
 using namespace System::Collections::Generic;
-using namespace MathUtils;
+using namespace MathUtils::Mathf;
 
 ref class Grid {
   GraphicsPath^ unwalkableLayer;

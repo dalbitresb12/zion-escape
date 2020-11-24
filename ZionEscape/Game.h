@@ -5,6 +5,9 @@
 
 #include "Map.h"
 
+using namespace System::Threading;
+using namespace System::Threading::Tasks;
+
 ref class Game {
   Map^ map;
 
@@ -16,9 +19,16 @@ public:
     delete map;
   }
 
-  void StartGeneration(Graphics^ g) {
-    this->map->StartGeneration(g);
-    
+  void MapGeneration() {
+    if (!map->IsGenerating() && !map->IsGenerated()) {
+      Action^ action = gcnew Action(map, &Map::StartGeneration);
+      Task^ generator = Task::Factory->StartNew(action, TaskCreationOptions::LongRunning);
+    }
+  }
+
+  void DrawMapGizmos(Graphics^ world) {
+    if (this->map->IsGenerated())
+      this->map->Draw(world);
   }
 
   bool IsGenerated() {

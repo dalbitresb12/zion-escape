@@ -173,6 +173,7 @@
     <ClInclude Include="Assassin.h" />
     <ClInclude Include="BitmapManager.h" />
     <ClInclude Include="Corrupt.h" />
+    <ClInclude Include="DataTypes.h" />
     <ClInclude Include="Entity.h" />
     <ClInclude Include="Game.h" />
     <ClInclude Include="Enums.h" />
