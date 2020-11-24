@@ -4,231 +4,256 @@
 #define _MAP_H_
 
 #include "Scene.h"
+#include "DataTypes.h"
+#include "MathUtils.h"
+#include "Pathfinder.h"
+
 using namespace System;
-using namespace System::Collections::Generic;
 using namespace System::Drawing;
+using namespace System::Collections::Generic;
+using namespace MathUtils::Mathf;
+
+namespace Defaults {
+  namespace Map {
+    const double MinScenes = 40;
+    const double MaxScenes = 50;
+  }
+}
 
 ref class Map {
-  List<Scene^>^ scenes;
+  Scene^ currentScene;
   Random^ rnd;
-  int seed;
+  Point furthestScene;
+  const int seed;
   int maxScenes;
+  const MinMax<short>^ depthCount;
   bool isGenerating;
   bool generated;
 
 public:
-  Map(): Map(40, 50, Environment::TickCount) {}
+  Map() : Map(RoundToInt(Defaults::Map::MinScenes), RoundToInt(Defaults::Map::MaxScenes), Environment::TickCount) {}
 
-  Map(int seed): Map(40, 50, seed) {}
+  Map(int seed) : Map(RoundToInt(Defaults::Map::MinScenes), RoundToInt(Defaults::Map::MaxScenes), seed) {}
 
-  Map(int min, int max): Map(min, max, Environment::TickCount) {}
+  Map(int min, int max) : Map(min, max, Environment::TickCount) {}
 
-  Map(int min, int max, int seed) {
-    this->seed = seed;
+  Map(int min, int max, int seed) : seed(seed) {
     this->rnd = gcnew Random(seed);
     this->maxScenes = rnd->Next(min, max);
-    this->Reboot();
+    int minDepth = RoundToInt(min / (2.0 + 0.1 * min));
+    int maxDepth = RoundToInt(max / (2.0 + 0.1 * max));
+    this->depthCount = gcnew MinMax<short>(minDepth, maxDepth);
+    this->isGenerating = false;
+    this->generated = false;
   }
 
   ~Map() {
-    for each (Scene ^ scene in this->scenes)
-      delete scene;
-    this->scenes->Clear();
-    delete this->scenes;
-    delete this->rnd;
+    delete currentScene;
+    delete rnd;
+    delete depthCount;
   }
 
-  void Reboot() {
-    if (this->scenes != nullptr) {
-      for each (Scene^ scene in this->scenes)
-        delete scene;
-      this->scenes->Clear();
-      delete this->scenes;
-    }
+  void StartGeneration() {
+    // Prevent execution if the map has already been generated
+    if (generated)
+      return;
 
-    //Turn the values of generation to false
-    this->isGenerating = false;
-    this->generated = false;
-
-    //Create the list of scenes and select the start point of the first one
-    this->scenes = gcnew List<Scene^>;
-    this->CreateScene(1, 1, 1, 1, Point(468, 312));
+    // Set the value needed to stop multiple threads from being created
+    isGenerating = true;
+    // Initialize depth counter
+    int depth = 0;
+    // Set the position of the first scene in the virtual grid
+    Point position = Point(0, 0);
+    // Initialize points List (only used to detect collisions)
+    Dictionary<Point, int>^ points = gcnew Dictionary<Point, int>;
+    // Initialize the first scene
+    currentScene = gcnew Scene(DoorLocations(true), position);
+    // Add the first Point
+    points->Add(position, currentScene->GetHashCode());
+    // Create the default spawners
+    currentScene->CreateSpawners(points, rnd);
+    // Start recursive generation
+    GenerateScene(currentScene, points, depth);
+    // Finish generation
+    generated = true;
+    // No longer generating
+    isGenerating = false;
   }
 
-  void CreateScene(bool up, bool down, bool left, bool right, Point pos) {
-    this->scenes->Add(gcnew Scene(up, down, left, right, pos));
-    this->scenes[this->scenes->Count - 1]->CreateSpawner(pos);
-  }
+  void Draw(Graphics^ world) {
+    // Prevent execution when there's nothing to draw
+    if (currentScene == nullptr)
+      return;
 
-  void StartGeneration(Graphics^ g) {
-    //Generate new Scenes
-    if (this->isGenerating) {
-
-      //Check all the scenes
-      for (short curScene = 0; curScene < this->scenes->Count; curScene++) {
-        //Number of spawners in the current Scene
-        short countSpawners = this->scenes[curScene]->GetSpawners()->Count;
-
-        if(countSpawners > 0) {
-
-          this->isGenerating = true;
-
-          //For each Spawner of the Scene we need to know if they collides or not
-          for (short curSpawner = countSpawners; curSpawner > 0; curSpawner--) {
-            //Get the door direction that the next scene will need
-            Direction doorNeeded = this->scenes[curScene]->GetSpawners()[curSpawner - 1]->GetParentDirection();
-            bool spawnerCollides = false;
-
-            //Check all scenes
-            for each (Scene ^ otherScene in this->scenes) {
-              //Check all ScenesSpawners of the otherScene
-              for each (SceneSpawner ^ otherSpawner in otherScene->GetSpawners()) {
-                if (this->scenes[curScene]->GetSpawners()[curSpawner - 1] != otherSpawner) {
-                  //If the curSpawner is in the same position of otherSpawner, a door of the curScene will be closed
-                  if (this->scenes[curScene]->GetSpawners()[curSpawner - 1]->GetPos().Equals(otherSpawner->GetPos())) {
-                    spawnerCollides = true;
-                    this->CloseDoor(doorNeeded, this->scenes[curScene]);
-                    break;
-                  }
-                }
-              }
-              if (spawnerCollides)
-                break;
-              //If the curSpawner is in the same position of otherScene, a door of the curScene will be closed
-              if (this->scenes[curScene]->GetSpawners()[curSpawner - 1]->GetPos().Equals(otherScene->GetPos())) {
-                spawnerCollides = true;
-                this->CloseDoorScene(doorNeeded, this->scenes[curScene], otherScene);
-                break;
-              }
-            }
-
-            if (spawnerCollides) {
-              this->scenes[curScene]->DeleteSpawner(curSpawner - 1);
-              break;
-            }
-
-            //Values of the new scene
-            bool up = true, down = true, right = true, left = true;
-            Point pos = this->scenes[curScene]->GetSpawners()[curSpawner - 1]->GetPos();
-            
-            if (this->scenes->Count < this->maxScenes) {
-              //Get a random open or close door
-              do {
-                if (doorNeeded != Direction::Up)
-                  up = rnd->Next(0, 2);
-                if (doorNeeded != Direction::Down)
-                  down = rnd->Next(0, 2);
-                if (doorNeeded != Direction::Right)
-                  right = rnd->Next(0, 2);
-                if (doorNeeded != Direction::Left)
-                  left = rnd->Next(0, 2);
-              } while (up == down == right == left == true);
-            }
-            //If number of scenes reaches the maxScenes, the current scene needs to be closed
-            else {
-              switch (doorNeeded)
-              {
-              case Direction::Up:
-                down = right = left = false;
-                break;
-              case Direction::Down:
-                up = right = left = false;
-                break;
-              case Direction::Right:
-                up = down = left = false;
-                break;
-              case Direction::Left:
-                up = down = right = false;
-                break;
-              }
-            }
-            //Create a new scene
-            this->CreateScene(up, down, left, right, pos);
-            //After the creation of the scene, delete the curSpawner
-            this->scenes[curScene]->DeleteSpawner(curSpawner - 1);
-          }
-        }
-        else {
-          this->isGenerating = false;
-        }
-
-      }
-    }
-    else if (this->scenes->Count == 1) {
-      this->isGenerating = true;
-    }
-    else if (this->scenes->Count < this->maxScenes && this->isGenerating == false) {
-      this->Reboot();
-    } else {
-      //The Map is now generated
-      this->generated = true;
-
-      //Put a color to the background
-      //g->Clear(Color::FromArgb(255, 37, 37, 37));
-
-      //Draw all the scenes
-      for each (Scene ^ curScene in this->scenes) {
-        //Put a color to the maze
-        g->FillRectangle(Brushes::CornflowerBlue, curScene->GetDrawingArea());
-
-        //Put a different color to the background of the first and last scene
-        if (curScene == this->scenes[0])
-          g->FillRectangle(Brushes::Crimson, curScene->GetDrawingArea());
-        else if (curScene == this->scenes[this->scenes->Count - 1])
-          g->FillRectangle(Brushes::BlueViolet, curScene->GetDrawingArea());
-
-        // Draw the scene
-        curScene->Draw(g);
-      }
-    }
-  }
-
-  void CloseDoor(Direction doorNeeded, Scene^ scene) {
-    switch (doorNeeded)
-    {
-    case Direction::Up:
-      scene->SetDown(false);
-      break;
-    case Direction::Down:
-      scene->SetUp(false);
-      break;
-    case Direction::Right:
-      scene->SetLeft(false);
-      break;
-    case Direction::Left:
-      scene->SetRight(false);
-      break;
-    }
-  }
-
-  void CloseDoorScene(Direction doorNeeded, Scene^ scene, Scene^ otherScene) {
-    switch (doorNeeded)
-    {
-    case Direction::Up:
-      if (!otherScene->GetUp())
-        scene->SetDown(false);
-      break;
-    case Direction::Down:
-      if (!otherScene->GetDown())
-        scene->SetUp(false);
-      break;
-    case Direction::Right:
-      if (!otherScene->GetRight())
-        scene->SetLeft(false);
-      break;
-    case Direction::Left:
-      if (!otherScene->GetLeft())
-        scene->SetRight(false);
-      break;
-    }
+    // Initialize List to prevent an infinite loop
+    List<int>^ drawnNodes = gcnew List<int>;
+    DrawScene(world, currentScene, drawnNodes);
+    // Clear the List and delete
+    drawnNodes->Clear();
+    delete drawnNodes;
   }
 
   bool IsGenerated() {
     return this->generated;
   }
 
+  bool IsGenerating() {
+    return this->isGenerating;
+  }
+
   int GetSeed() {
     return this->seed;
+  }
+
+private:
+  void GenerateScene(Scene^ scene, Dictionary<Point, int>^ points, int& depth) {
+    // Increase the depth counter
+    depth += 1;
+
+    for each (KeyValuePair<Direction, SceneSpawner^> element in scene->GetSpawners()) {
+      // Save the reference to the current spawner as a local
+      SceneSpawner^ currentSpawner = element.Value;
+
+      // Skip the current spawner since it is nullptr
+      if (currentSpawner == nullptr)
+        continue;
+
+      // Get the possible position of this scene
+      Point position = currentSpawner->GetPos();
+      // Get the door direction that the next scene will need
+      Direction doorNeeded = currentSpawner->GetParentDirection();
+
+      // Detect possible collisions. Continues to the next
+      // loop and deletes the current spawner if a collision
+      // was found.
+      if (points->ContainsKey(position)) {
+        int hashCode;
+        points->TryGetValue(position, hashCode);
+
+        if (hashCode != currentSpawner->GetHashCode()) {
+          scene->SetDoorValue(EnumUtilities::GetInverseDirection(doorNeeded), false);
+          delete currentSpawner;
+          continue;
+        }
+      }
+
+      // Initialize values for the new scene
+      DoorLocations doorLocations;
+      
+      if (points->Count < maxScenes && depth < depthCount->Max) {
+        // Set probability
+        int probability = 0 + 2 * depth;
+
+        // Set default values
+        doorLocations.SetAll(true);
+
+        // Get a random open or closed door
+        do {
+          if (doorNeeded != Direction::Up)
+            doorLocations.Up = rnd->Next(1, 101) > probability;
+          if (doorNeeded != Direction::Down)
+            doorLocations.Down = rnd->Next(1, 101) > probability;
+          if (doorNeeded != Direction::Left)
+            doorLocations.Left = rnd->Next(1, 101) > probability;
+          if (doorNeeded != Direction::Right)
+            doorLocations.Right = rnd->Next(1, 101) > probability;
+        } while (GeneratorCondition(doorLocations, doorNeeded, depth, depthCount->Min));
+      } else {
+        // If the number of scenes reaches the max scenes,
+        // the current scene needs to be closed
+        switch (doorNeeded) {
+          case Direction::Up:
+            doorLocations.SetAll(true, false, false, false);
+            break;
+          case Direction::Down:
+            doorLocations.SetAll(false, true, false, false);
+            break;
+          case Direction::Left:
+            doorLocations.SetAll(false, false, true, false);
+            break;
+          case Direction::Right:
+            doorLocations.SetAll(false, false, false, true);
+            break;
+        }
+      }
+
+      // Create the new scene
+      Scene^ generatedScene = gcnew Scene(doorLocations, position);
+
+      // Create the spawners and add them to the points List
+      generatedScene->CreateSpawners(points, rnd, scene, doorNeeded);
+
+      // Remove the spawner from the Dictionary
+      points->Remove(position);
+      // Save the Point to the Dictionary with the scene hash
+      points->Add(position, generatedScene->GetHashCode());
+
+      // Get the distance between this scene and (0, 0)
+      // using the same algorithm as for the Pathfinder.
+      // Then calculate if this one is more than the current
+      // furthest scene.
+      if (Pathfinder::GetDistance(Point(0, 0), position) > Pathfinder::GetDistance(Point(0, 0), furthestScene))
+        furthestScene = position;
+
+      // Add as a neighbour to the current scene
+      scene->AddNeighbour(element.Key, generatedScene);
+
+      // Delete the spawner because the scene has been created
+      delete currentSpawner;
+      // Continue generating more scenes using recursion
+      GenerateScene(generatedScene, points, depth);
+    }
+
+    // Clear the List since all the spawners have been used
+    scene->GetSpawners()->Clear();
+    // Decrease the depth counter
+    depth -= 1;
+  }
+
+  void DrawScene(Graphics^ world, Scene^ scene, List<int>^ drawnNodes) {
+    if (drawnNodes->Contains(scene->GetHashCode()))
+      return;
+
+    Point position = scene->GetPos();
+    Size size = scene->GetBackgroundSize();
+    Point worldPos = Point((position.X + 10) * size.Width, (position.Y + 10) * size.Height);
+    Rectangle rect = Rectangle(worldPos, size);
+
+    if (position.Equals(Point(0, 0))) {
+      world->FillRectangle(Brushes::Crimson, rect);
+    } else if (position.Equals(furthestScene)) {
+      world->FillRectangle(Brushes::BlueViolet, rect);
+    } else {
+      world->FillRectangle(Brushes::CornflowerBlue, rect);
+    }
+
+    scene->Draw(world);
+    drawnNodes->Add(scene->GetHashCode());
+
+    for each (KeyValuePair<Direction, Scene^> element in scene->GetNeighbours()) {
+      Scene^ neighbour = element.Value;
+      DrawScene(world, neighbour, drawnNodes);
+    }
+  }
+
+  static bool GeneratorCondition(DoorLocations doors, Direction doorNeeded, int depth, int minDepth) {
+    bool allTrue = doors.IsAllTrue();
+    bool closedScene = false;
+    switch (doorNeeded) {
+      case Direction::Up:
+        closedScene = doors.Up && !doors.Down && !doors.Right && !doors.Left;
+        break;
+      case Direction::Down:
+        closedScene = !doors.Up && doors.Down && !doors.Right && !doors.Left;
+        break;
+      case Direction::Left:
+        closedScene = !doors.Up && !doors.Down && doors.Right && !doors.Left;
+        break;
+      case Direction::Right:
+        closedScene = !doors.Up && !doors.Down && !doors.Right && doors.Left;
+        break;
+    }
+    return allTrue || (closedScene && depth < minDepth);
   }
 };
 

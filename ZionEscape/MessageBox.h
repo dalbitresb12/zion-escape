@@ -34,7 +34,7 @@ public:
   }
 
   //Print letter by letter
-  void PrintLetter(Label^ label, Timer^ timer) {
+  void PrintLetter(Label^ label, Windows::Forms::Timer^ timer) {
     // Time to change to the other message
     short timeNextMessage = 20;
 
