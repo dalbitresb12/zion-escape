@@ -7,6 +7,12 @@
 #include "BitmapManager.h"
 #include "Enums.h"
 #include "DataTypes.h"
+#include "NPC.h"
+#include "Grid.h"
+#include "Player.h"
+#include "Ally.h"
+#include "Corrupt.h"
+#include "Assassin.h"
 
 using namespace System::Drawing;
 using namespace System::Collections::Generic;
@@ -14,8 +20,10 @@ using namespace System::Collections::Generic;
 ref class Scene {
   Bitmap^ background;
   List<Direction>^ doors;
+  List<NPC^>^ npcs;
   Dictionary<Direction, Scene^>^ neighbours;
   Dictionary<Direction, SceneSpawner^>^ spawners;
+  bool explored;
   // Only used to check collisions
   Point position;
 
@@ -25,7 +33,6 @@ public:
     this->neighbours = gcnew Dictionary<Direction, Scene^>;
     this->spawners = gcnew Dictionary<Direction, SceneSpawner^>;
     this->position = position;
-    ImageSelector();
   }
 
   ~Scene() {
@@ -45,68 +52,48 @@ public:
     }
   }
 
-  void SetBackground(BackgroundImage image) {
-    BitmapManager^ bmpManager = BitmapManager::GetInstance();
-    background = bmpManager->GetImage(EnumUtilities::GetPathFromBackground(image));
-  }
-
-  //Temporal Image Selector -> Works as  a reference
-  void ImageSelector() {
-    BitmapManager^ bmpManager = BitmapManager::GetInstance();
-    bool up = GetDoorValue(Direction::Up);
-    bool down = GetDoorValue(Direction::Down);
-    bool left = GetDoorValue(Direction::Left);
-    bool right = GetDoorValue(Direction::Right);
-
-    if (!up && down && !right && !left)
-      background = bmpManager->GetImage("assets\\sprites\\colliders\\D.png");
-
-    else if (!up && down && right && !left)
-      background = bmpManager->GetImage("assets\\sprites\\colliders\\DR.png");
-
-    else if (up && down && right && left)
-      background = bmpManager->GetImage("assets\\sprites\\colliders\\G.png");
-
-    else if (!up && !down && !right && left)
-      background = bmpManager->GetImage("assets\\sprites\\colliders\\L.png");
-
-    else if (!up && !down && right && left)
-      background = bmpManager->GetImage("assets\\sprites\\colliders\\RL.png");
-
-    else if (!up && !down && right && !left)
-      background = bmpManager->GetImage("assets\\sprites\\colliders\\R.png");
-
-    else if (up && !down && !right && !left)
-      background = bmpManager->GetImage("assets\\sprites\\colliders\\T.png");
-
-    else if (up && down && !right && !left)
-      background = bmpManager->GetImage("assets\\sprites\\colliders\\TD.png");
-
-    else if (up && !down && !right && left)
-      background = bmpManager->GetImage("assets\\sprites\\colliders\\TL.png");
-
-    else if (up && !down && right && !left)
-      background = bmpManager->GetImage("assets\\sprites\\colliders\\TR.png");
-
-    else if (!up && down && !right && left)
-      background = bmpManager->GetImage("assets\\sprites\\colliders\\DL.png");
-
-    else if (!up && down && right && left)
-      background = bmpManager->GetImage("assets\\sprites\\colliders\\DRL.png");
-
-    else if (up && down && !right && left)
-      background = bmpManager->GetImage("assets\\sprites\\colliders\\TDL.png");
-
-    else if (up && down && right && !left)
-      background = bmpManager->GetImage("assets\\sprites\\colliders\\TDR.png");
-
-    else if (up && !down && right && left)
-      background = bmpManager->GetImage("assets\\sprites\\colliders\\TRL.png");
-  }
-
   void Draw(Graphics^ world) {
-    Point worldPos = Point((position.X + 10) * background->Width, (position.Y + 10) * background->Height);
-    world->DrawImage(background, worldPos);
+    Draw(world, Point(0, 0));
+  }
+
+  void Draw(Graphics^ world, Point position) {
+    // Prevent execution if there's no background to draw
+    if (background == nullptr)
+      return;
+
+    BitmapManager^ bmpManager = BitmapManager::GetInstance();
+    Bitmap^ door = bmpManager->GetImage("assets\\sprites\\misc\\door.png");
+    DoorLocations locations = GetDoorLocations();
+
+    world->DrawImage(background, position);
+
+    if (locations.Up) {
+      world->DrawImage(door, Point(422, 27));
+    }
+
+    if (locations.Down) {
+      door->RotateFlip(RotateFlipType::Rotate180FlipNone);
+      world->DrawImage(door, Point(422, 520));
+      door->RotateFlip(RotateFlipType::Rotate180FlipNone);
+    }
+
+    if (locations.Left) {
+      door->RotateFlip(RotateFlipType::Rotate270FlipNone);
+      world->DrawImage(door, Point(27, 266));
+      door->RotateFlip(RotateFlipType::Rotate90FlipNone);
+    }
+
+    if (locations.Right) {
+      door->RotateFlip(RotateFlipType::Rotate90FlipNone);
+      world->DrawImage(door, Point(831, 266));
+      door->RotateFlip(RotateFlipType::Rotate270FlipNone);
+    }
+
+    if (npcs != nullptr) {
+      for each (NPC ^ npc in npcs) {
+        npc->Draw(world);
+      }
+    }
   }
 
   void CreateSpawners(Dictionary<Point, int>^ points, Random^ rnd, Scene^ parentScene, Direction parentDirection) {
@@ -149,12 +136,24 @@ public:
     return neighbours;
   }
 
+  void SetBackground(BackgroundImage image) {
+    BitmapManager^ bmpManager = BitmapManager::GetInstance();
+    background = bmpManager->GetImage(EnumUtilities::GetPathFromBackground(image));
+  }
+
+  void Explore() {
+    explored = true;
+  }
+
   void SetDoorValue(Direction direction, bool value) {
     if (value && !doors->Contains(direction))
       doors->Add(direction);
     else if (!value && doors->Contains(direction))
       doors->Remove(direction);
-    this->ImageSelector();
+  }
+
+  bool IsExplored() {
+    return explored;
   }
 
   bool GetDoorValue(Direction direction) {
@@ -176,6 +175,103 @@ public:
 
   Dictionary<Direction, SceneSpawner^>^ GetSpawners() {
     return spawners;
+  }
+
+  List<NPC^>^ GetNPCList() {
+    return npcs;
+  }
+
+  void CreateNPCS(int corrupts, int assassins) {
+    if (npcs == nullptr) {
+      npcs = gcnew List<NPC^>;
+    }
+
+    Random rnd;
+    for (int i = 0; i < corrupts; ++i) {
+      int x = rnd.Next(143, 858);
+      int y = rnd.Next(143, 520);
+      Corrupt^ entity = gcnew Corrupt(Point(x, y));
+      npcs->Add(entity);
+    }
+
+    for (int i = 0; i < assassins; ++i) {
+      int x = rnd.Next(143, 858);
+      int y = rnd.Next(143, 520);
+      Assassin^ entity = gcnew Assassin(Point(x, y));
+      npcs->Add(entity);
+    }
+  }
+
+  void MoveNPCS(Grid^ grid, Player^ player, int tickInterval) {
+    // Prevent execution if NPCs is nullptr
+    // This will prevent the worst error in the debugger, ever:
+    // 'System.NullReferenceException' occurred in Unknown Module
+    // Don't suffer what I suffered. Don't forget to check this first.
+    if (npcs != nullptr) {
+      for each (NPC ^ npc in npcs) {
+        Point deltas = npc->GetDelta();
+        npc->Move(deltas.X, deltas.Y, grid);
+
+        // Enemy Damage - If the NPC is an assassin
+        if (npc->GetEntityType() == EntityType::Assassin) {
+          // Reference the assassin
+          Assassin^ assassin = (Assassin^)npc;
+          // And its cooldown is equal or less than 0
+          if (assassin->GetCooldown() <= 0) {
+            // If the assasin collides with the player (The health of the player must be greater than 0)
+            if (player->HasCollision(assassin) && player->GetHealth() > 0.f) {
+              // Assasin damages the player
+              player->SetHealth(player->GetHealth() - assassin->GetDamagePoints());
+              // And its cooldown will be half a second to attack again
+              assassin->SetCooldown(500 / tickInterval);
+            }
+          } else {
+            // Each tick the cooldown will be reduced if it's greater than 0
+            assassin->SetCooldown(assassin->GetCooldown() - 1);
+          }
+        }
+      }
+    }
+  }
+
+  void AnimateNPCS() {
+    if (npcs != nullptr) {
+      for each (NPC ^ npc in npcs) {
+        npc->ShiftCol();
+      }
+    }
+  }
+
+  void ResetPathfinders(Grid^ grid, List<Node^>^ playerNeighbours, Point playerPos, List<Ally^>^ allies) {
+    // Prevent execution if NPCs is nullptr
+    // This will prevent the worst error in the debugger, ever:
+    // 'System.NullReferenceException' occurred in Unknown Module
+    // Don't suffer what I suffered. Don't forget to check this first.
+    if (npcs == nullptr)
+      return;
+
+    for each (NPC ^ npc in npcs) {
+      if (npc->GetEntityType() == EntityType::Assassin) {
+        Node^ currentNode = grid->GetNodeFromWorldPoint(npc->GetPosition());
+        if (!playerNeighbours->Contains(currentNode)) {
+          Pathfinder::FindPath(grid, npc->GetPosition(), playerPos, npc);
+        }
+      } else if (npc->GetEntityType() == EntityType::Corrupt) {
+        Corrupt^ corrupt = (Corrupt^)npc;
+
+        if (corrupt->tracking == nullptr) {
+          Random r;
+          corrupt->tracking = allies[r.Next(0, allies->Count)];
+        }
+
+        Node^ allyNode = grid->GetNodeFromWorldPoint(corrupt->tracking->GetPosition());
+        List<Node^>^ allyNeighbours = grid->GetNeighbours(allyNode);
+        Node^ currentNode = grid->GetNodeFromWorldPoint(npc->GetPosition());
+        if (!allyNeighbours->Contains(currentNode)) {
+          Pathfinder::FindPath(grid, corrupt->GetPosition(), corrupt->tracking->GetPosition(), npc);
+        }
+      }
+    }
   }
 
 private:

@@ -13,7 +13,6 @@ using namespace System::Collections::Generic;
 using namespace MathUtils::Mathf;
 
 ref class Grid {
-  GraphicsPath^ unwalkableLayer;
   Point gridWorldSize;
   array<Node^, 2>^ grid;
 
@@ -22,34 +21,45 @@ ref class Grid {
   Point gridSize;
 
 public:
-  Grid(GraphicsPath^ unwalkableLayer, Point gridWorldSize, PointF nodeRadius) {
-    this->unwalkableLayer = unwalkableLayer;
+  GraphicsPath^ walkableLayer;
+
+  Grid(GraphicsPath^ walkableLayer, Point gridWorldSize, PointF nodeRadius) {
+    this->walkableLayer = walkableLayer;
     this->gridWorldSize = gridWorldSize;
     this->nodeRadius = nodeRadius;
 
     nodeDiameter = PointF(nodeRadius.X * 2, nodeRadius.Y * 2);
     gridSize = Point::Round(PointF(gridWorldSize.X / nodeDiameter.X, gridWorldSize.Y / nodeDiameter.Y));
-    CreateGrid();
+    CreateGrid(walkableLayer);
   }
-  ~Grid() {
-    delete unwalkableLayer;
-  }
+  ~Grid() {}
 
 private:
-  void CreateGrid() {
+  void CreateGrid(GraphicsPath^ walkableLayer) {
     grid = gcnew array<Node^, 2>(gridSize.X, gridSize.Y);
 
     for (int x = 0; x < gridSize.X; ++x) {
       for (int y = 0; y < gridSize.Y; ++y) {
         Point gridPos = Point(x, y);
         Point worldPos = Point::Round(PointF(x * nodeDiameter.X + nodeRadius.X, y * nodeDiameter.Y + nodeRadius.Y));
-        bool walkable = !unwalkableLayer->IsVisible(worldPos);
+        bool walkable = walkableLayer->IsVisible(worldPos);
         grid[x, y] = gcnew Node(worldPos, gridPos, walkable);
       }
     }
   }
 
 public:
+  void UpdateNodes(GraphicsPath^ walkableLayer) {
+    this->walkableLayer = walkableLayer;
+
+    for (int x = 0; x < gridSize.X; ++x) {
+      for (int y = 0; y < gridSize.Y; ++y) {
+        Point worldPos = grid[x, y]->worldPos;
+        grid[x, y]->walkable = walkableLayer->IsVisible(worldPos);
+      }
+    }
+  }
+
   List<Node^>^ GetNeighbours(Node^ node) {
     List<Node^>^ neighbours = gcnew List<Node^>;
 

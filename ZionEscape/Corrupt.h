@@ -4,11 +4,14 @@
 #define _CORRUPT_H_
 
 #include "NPC.h"
+#include "Ally.h"
 #include "Entity.h"
 #include "BitmapManager.h"
 
 ref class Corrupt : public NPC {
 public:
+  Ally^ tracking;
+
   Corrupt(Point pos)
     : NPC(EntityType::Corrupt, pos, 2U, 5.f, 1.f) {
     BitmapManager^ bmpManager = BitmapManager::GetInstance();
@@ -19,7 +22,7 @@ public:
 
   void ConvertToAlly() {
     BitmapManager^ bmpManager = BitmapManager::GetInstance();
-    Bitmap^ image = bmpManager->GetImage("assets\\sprites\\aliados\\aliado-malo.png");
+    Bitmap^ image = bmpManager->GetImage("assets\\sprites\\aliados\\aliado-corrupto.png");
     this->SetImage(image, 4, 4);
   }
 

@@ -193,6 +193,7 @@
     <ClInclude Include="Scene.h" />
     <ClInclude Include="SceneSpawner.h" />
     <ClInclude Include="Sprite.h" />
+    <ClInclude Include="UI.h" />
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="AssemblyInfo.cpp" />

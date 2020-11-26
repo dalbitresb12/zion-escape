@@ -51,27 +51,49 @@ public:
     return this->damagePoints;
   }
 
-  bool Collision(Entity^ object) {
-    // Collision needs the drawingArea of another Entity to return if the object collides or not
-    return this->drawingArea.IntersectsWith(object->drawingArea);
+  bool HasCollision(Entity^ object) {
+    return HasCollision(object->drawingArea);
+  }
+
+  bool HasCollision(Rectangle rect) {
+    return this->drawingArea.IntersectsWith(rect);
+  }
+
+  virtual void Move(Direction direction, GraphicsPath^ walkableLayer) {
+    Rectangle rect = Rectangle(drawingArea);
+
+    if (direction == Direction::Up || direction == Direction::Down)
+      rect.Y += direction == Direction::Up ? -velocity : velocity;
+    if (direction == Direction::Left || direction == Direction::Right)
+      rect.X += direction == Direction::Left ? -velocity : velocity;
+
+    if (walkableLayer != nullptr) {
+      if (walkableLayer->IsVisible(rect.Location) && walkableLayer->IsVisible(Point(rect.Right, rect.Bottom)) &&
+          walkableLayer->IsVisible(Point(rect.Right, rect.Top)) && walkableLayer->IsVisible(Point(rect.Left, rect.Bottom))) {
+        drawingArea = rect;
+      }
+    } else {
+      drawingArea = rect;
+    }
+
+    SetSpriteDirection(direction);
   }
 
   virtual void Move(Direction direction) {
-    if (direction == Direction::Up || direction == Direction::Down)
-      this->drawingArea.Y += direction == Direction::Up ? -velocity : velocity;
-    if (direction == Direction::Left || direction == Direction::Right)
-      this->drawingArea.X += direction == Direction::Left ? -velocity : velocity;
-
-    this->SetSpriteDirection(direction);
+    Move(direction, nullptr);
   }
 
-  virtual void Move(int deltaX, int deltaY) {
+  virtual void Move(int deltaX, int deltaY, Grid^ grid) {
     for each (Direction direction in GetDirectionFromDelta(deltaX, deltaY))
-      this->Move(direction);
+      Move(direction);
   }
 
   virtual void Move(Keys key) {
-    this->Move(GetDirectionFromKey(key));
+    Move(GetDirectionFromKey(key));
+  }
+
+  virtual void Move(Keys key, GraphicsPath^ walkableLayer) {
+    Move(GetDirectionFromKey(key), walkableLayer);
   }
 
   static Direction GetDirectionFromKey(Keys key) {
@@ -89,12 +111,12 @@ public:
     }
   }
 
-  static List<int>^ GetDirectionFromDelta(int deltaX, int deltaY) {
-    List<int>^ directions = gcnew List<int>;
+  static List<Direction>^ GetDirectionFromDelta(int deltaX, int deltaY) {
+    List<Direction>^ directions = gcnew List<Direction>;
     if (deltaY != 0)
-      deltaY < 0 ? directions->Add((int)Direction::Up) : directions->Add((int)Direction::Down);
+      deltaY < 0 ? directions->Add(Direction::Up) : directions->Add(Direction::Down);
     if (deltaX != 0)
-      deltaX < 0 ? directions->Add((int)Direction::Left) : directions->Add((int)Direction::Right);
+      deltaX < 0 ? directions->Add(Direction::Left) : directions->Add(Direction::Right);
     return directions;
   }
 };

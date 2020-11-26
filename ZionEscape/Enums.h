@@ -15,12 +15,24 @@ public enum class Direction {
   Up, Down, Left, Right
 };
 
+// If you add another background image change the
+// maximum value in the random getter below.
 public enum class BackgroundImage {
   Scene1, Scene2, Scene3, Scene4
 };
 
+public enum class UserInterface {
+  MainMenu, Credits, Pause, InGame, None
+};
+
 namespace EnumUtilities {
+  static BackgroundImage GetRandomBackground(Random^ rnd) {
+    // Set this maximum value to the number of elements in the enumaration.
+    return (BackgroundImage)rnd->Next(4);
+  }
+
   static String^ GetPathFromBackground(BackgroundImage image) {
+    // Add the new path to the scene here.
     switch (image) {
       case BackgroundImage::Scene1:
         return "assets\\sprites\\scenes\\scene_1.png";
