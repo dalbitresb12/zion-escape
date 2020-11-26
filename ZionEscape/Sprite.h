@@ -45,6 +45,14 @@ public:
     this->nRows = nRows;
   }
 
+  Size GetSize() {
+    return drawingArea.Size;
+  }
+
+  void SetPosition(int x, int y) {
+    SetPosition(Point(x, y));
+  }
+
   void SetPosition(Point point) {
     this->drawingArea.Location = point;
   }
@@ -102,6 +110,10 @@ public:
   Rectangle GetCropArea() {
     Point pos = Point(col * size.Width, row * size.Height);
     return Rectangle(pos, size);
+  }
+
+  Rectangle GetDrawingArea() {
+    return this->drawingArea;
   }
 };
 

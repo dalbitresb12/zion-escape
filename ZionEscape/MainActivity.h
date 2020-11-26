@@ -1,7 +1,8 @@
 #pragma once
-#include "Game.h"
+
 #include "BitmapManager.h"
 #include "Pathfinder.h"
+#include "Game.h"
 #include "Grid.h"
 #include "Player.h"
 #include "Ally.h"
@@ -16,6 +17,7 @@ namespace ZionEscape {
   using namespace System::Collections;
   using namespace System::Data;
   using namespace System::Windows::Forms;
+  using namespace System::Drawing::Text;
   using namespace System::Diagnostics;
 
   // Main Activity Form
@@ -23,53 +25,24 @@ namespace ZionEscape {
     System::ComponentModel::IContainer^ components;
     System::Windows::Forms::Timer^ MovementTimer;
     System::Windows::Forms::Timer^ AnimationTimer;
+    System::Windows::Forms::Timer^ PathfinderTimer;
     // User-defined properties.
-    Game^ game;
-    Bitmap^ background;
-    GraphicsPath^ unwalkableLayer;
-    Grid^ mapGrid;
-    Player^ player;
-    List<Portal^>^ portals;
-    List<NPC^>^ npcs;
-
-    List<Keys>^ keysPressed;
-    List<Keys>^ validKeys;
+    UserInterface currentUI;
+    Point prevMouseLoc;
+    Point mouseLoc;
+  private: System::Windows::Forms::Timer^ MessageTimer;
+  private: System::Windows::Forms::Label^ MessageLabel;
+         Game^ game;
 
   public:
     MainActivity() {
-      // User-defined code.
-      BitmapManager^ bmpManager = BitmapManager::GetInstance();
-      background = bmpManager->GetImage("assets\\sprites\\scenes\\scene_1.png");
-      //Set an icon to the Cursor
-      this->Cursor = gcnew System::Windows::Forms::Cursor("assets\\sprites\\misc\\cursor.ico");
-
-      this->game = gcnew Game();
-      this->game->MapGeneration();
-
-      unwalkableLayer = gcnew GraphicsPath();
-      Point gridWorldSize = Point(background->Width, background->Height);
-      PointF nodeRadius = PointF(18, 10);
-      mapGrid = gcnew Grid(unwalkableLayer, gridWorldSize, nodeRadius);
-
-      player = gcnew Player(Point(200, 400));
-
-      npcs = gcnew List<NPC^>;
-      npcs->Add(gcnew Ally(Point(700, 200)));
-      npcs->Add(gcnew Ally(Point(450, 200)));
-      npcs->Add(gcnew Assassin(Point(300, 100)));
-      npcs->Add(gcnew Corrupt(Point(300, 100)));
-
-      ResetPathfinders();
-
-      keysPressed = gcnew List<Keys>;
-      validKeys = gcnew List<Keys>;
-      validKeys->Add(Keys::W);
-      validKeys->Add(Keys::A);
-      validKeys->Add(Keys::S);
-      validKeys->Add(Keys::D);
-
       // Important call. Do not delete.
       InitializeComponent();
+
+      // User-defined code.
+      currentUI = UserInterface::MainMenu;
+      // Set custom cursor
+      Cursor = gcnew System::Windows::Forms::Cursor("assets\\sprites\\misc\\cursor.ico");
     }
 
   protected:
@@ -96,25 +69,50 @@ namespace ZionEscape {
       this->components = (gcnew System::ComponentModel::Container());
       this->MovementTimer = (gcnew System::Windows::Forms::Timer(this->components));
       this->AnimationTimer = (gcnew System::Windows::Forms::Timer(this->components));
+      this->PathfinderTimer = (gcnew System::Windows::Forms::Timer(this->components));
+      this->MessageTimer = (gcnew System::Windows::Forms::Timer(this->components));
+      this->MessageLabel = (gcnew System::Windows::Forms::Label());
       this->SuspendLayout();
       // 
       // MovementTimer
       // 
-      this->MovementTimer->Enabled = true;
       this->MovementTimer->Interval = 20;
       this->MovementTimer->Tick += gcnew System::EventHandler(this, &MainActivity::MovementTimer_Tick);
       // 
       // AnimationTimer
       // 
-      this->AnimationTimer->Enabled = true;
       this->AnimationTimer->Interval = 80;
       this->AnimationTimer->Tick += gcnew System::EventHandler(this, &MainActivity::AnimationTimer_Tick);
+      // 
+      // PathfinderTimer
+      // 
+      this->PathfinderTimer->Interval = 200;
+      this->PathfinderTimer->Tick += gcnew System::EventHandler(this, &MainActivity::PathfinderTimer_Tick);
+      // 
+      // MessageTimer
+      // 
+      this->MessageTimer->Tick += gcnew System::EventHandler(this, &MainActivity::MessageTimer_Tick);
+      // 
+     // MessageLabel
+     // 
+      this->MessageLabel->AutoSize = true;
+      this->MessageLabel->BackColor = System::Drawing::Color::Transparent;
+      this->MessageLabel->Font = (gcnew System::Drawing::Font(L"High Tower Text", 20.25F, System::Drawing::FontStyle::Bold, System::Drawing::GraphicsUnit::Point,
+        static_cast<System::Byte>(0)));
+      this->MessageLabel->ForeColor = System::Drawing::Color::Black;
+      this->MessageLabel->Location = System::Drawing::Point(144, 270);
+      this->MessageLabel->Name = L"MessageLabel";
+      this->MessageLabel->Size = System::Drawing::Size(417, 32);
+      this->MessageLabel->TabIndex = 0;
+      this->MessageLabel->Text = L"Conque buscan nuestra ayuda . . .";
+      this->MessageLabel->Visible = false;
       // 
       // MainActivity
       // 
       this->AutoScaleDimensions = System::Drawing::SizeF(6, 13);
       this->AutoScaleMode = System::Windows::Forms::AutoScaleMode::Font;
       this->ClientSize = System::Drawing::Size(936, 624);
+      this->Controls->Add(this->MessageLabel);
       this->DoubleBuffered = true;
       this->Margin = System::Windows::Forms::Padding(4);
       this->Name = L"MainActivity";
@@ -122,37 +120,58 @@ namespace ZionEscape {
       this->Paint += gcnew System::Windows::Forms::PaintEventHandler(this, &MainActivity::MainActivity_Paint);
       this->KeyDown += gcnew System::Windows::Forms::KeyEventHandler(this, &MainActivity::MainActivity_KeyDown);
       this->KeyUp += gcnew System::Windows::Forms::KeyEventHandler(this, &MainActivity::MainActivity_KeyUp);
+      this->MouseClick += gcnew System::Windows::Forms::MouseEventHandler(this, &MainActivity::MainActivity_MouseClick);
+      this->MouseMove += gcnew System::Windows::Forms::MouseEventHandler(this, &MainActivity::MainActivity_MouseMove);
       this->ResumeLayout(false);
+      this->PerformLayout();
 
     }
 #pragma endregion
   private: void MainActivity_Paint(Object^ sender, PaintEventArgs^ e) {
     Graphics^ world = e->Graphics;
+    world->SmoothingMode = SmoothingMode::AntiAlias;
+    world->TextRenderingHint = TextRenderingHint::AntiAlias;
 
-    // TO DO: Move all of this to Game class and use rendering logic
-    world->DrawImage(this->background, Point(0, 0));
-
-    // Draw the map preview
-    this->game->DrawMapGizmos(world);
-
-    for each (NPC ^ npc in npcs) {
-      npc->Draw(world);
-    }
-    // DRAW PORTALS
-    if (portals != nullptr) {
-      for each (Portal ^ portal in portals) {
-        portal->Draw(world);
+    if (currentUI == UserInterface::InGame) {
+      if (game == nullptr) {
+        game = gcnew Game();
+        game->MapGeneration();
       }
+
+      if (!game->HasInitialized()) {
+        game->Init(ClientSize);
+      }
+
+      if (!MovementTimer->Enabled) {
+        MovementTimer->Start();
+      }
+
+      if (!AnimationTimer->Enabled) {
+        AnimationTimer->Start();
+      }
+
+      if (!PathfinderTimer->Enabled) {
+        PathfinderTimer->Start();
+      }
+
+      game->Paint(world, ClientRectangle);
+    } else if (currentUI == UserInterface::Pause) {
+      UI::DrawPause(world, mouseLoc);
+    } else if (currentUI == UserInterface::Credits) {
+      UI::DrawCredits(world, mouseLoc);
+    } else if (currentUI == UserInterface::MainMenu) {
+      if (game != nullptr) {
+        game = nullptr;
+      }
+
+      UI::DrawMenu(world, ClientSize, mouseLoc);
     }
-      
-    this->player->Draw(world);
-    this->player->DrawHearts(world);
   }
 
   private: void MainActivity_KeyDown(Object^ sender, KeyEventArgs^ e) {
-    // Temporary Map Seed Print
-    if (e->KeyCode == Keys::P) {
-      Debug::WriteLine("Seed: {0}", this->game->GetMapSeed());
+    if (currentUI == UserInterface::Credits && e->KeyCode == Keys::Escape) {
+      currentUI = UserInterface::MainMenu;
+      Invalidate();
       return;
     }
     // Temporary substract health points from the player
@@ -161,101 +180,85 @@ namespace ZionEscape {
       return;
     }
 
-    if (!validKeys->Contains(e->KeyCode)) return;
+    if (currentUI == UserInterface::Pause && e->KeyCode == Keys::Escape) {
+      currentUI = UserInterface::InGame;
+      MovementTimer->Start();
+      AnimationTimer->Start();
+      PathfinderTimer->Start();
+      if (game->GetMessagebox() != nullptr) {
+        MessageTimer->Start();
+        MessageLabel->Visible = true;
+      }
+      Invalidate();
+      return;
+    }
 
-    if (!keysPressed->Contains(e->KeyCode)) {
-      keysPressed->Add(e->KeyCode);
-      player->StartAnimation();
-      ResetPathfinders();
+    if (currentUI == UserInterface::InGame && game != nullptr) {
+      if (e->KeyCode == Keys::Escape) {
+        currentUI = UserInterface::Pause;
+        MovementTimer->Stop();
+        AnimationTimer->Stop();
+        PathfinderTimer->Stop();
+        if (game->GetMessagebox() != nullptr) {
+          MessageTimer->Stop();
+          MessageLabel->Visible = false;
+        }
+        Invalidate();
+        return;
+      }
+
+      game->KeyDown(e);
     }
   }
 
   private: void MainActivity_KeyUp(Object^ sender, KeyEventArgs^ e) {
-    if (keysPressed->Contains(e->KeyCode))
-      keysPressed->Remove(e->KeyCode);
-
-    if (keysPressed->Count == 0)
-      player->StopAnimation();
+    if (game != nullptr)
+      game->KeyUp(e);
   }
 
   private: void MovementTimer_Tick(Object^ sender, EventArgs^ e) {
-    for each (NPC ^ npc in npcs) {
-      Point deltas = npc->GetDelta();
-      npc->Move(deltas.X, deltas.Y);
-    }
-
-    for each (Keys key in keysPressed) {
-      if (!validKeys->Contains(key)) break;
-      player->Move(key);
-    }
-    //If the health of the player is less or equal to 2, the portals will appear
-    if (this->player->GetHealth() <= 2) {
-      //If the list of portals doesnt exist
-      if (portals == nullptr) {
-        portals = gcnew List<Portal^>;
-        //Create the first portal at the position of the player
-        portals->Add(gcnew Portal(this->player->GetPosition()));
-        //Create the second portal (select the position of the other portal)
-        Point pos = Point(300, 200);
-        portals->Add(gcnew Portal(pos));
-      }
-      else {
-        for (short i = 0; i < portals->Count; i++)
-          if (portals[i]->Collision(this->player)) {
-            //If the player collides with the portal, its cooldown reduces by 1
-            portals[i]->SetCooldown(portals[i]->GetCooldown() - 1);
-            //If the cooldown of the portal is 0, the player will be teleported
-            if (portals[i]->GetCooldown() <= 0) {
-              //Set the position of player to the other portal
-              Point pos;
-              if (i % 2 == 0)
-                pos = portals[++i]->GetPosition();
-              else
-                pos = portals[--i]->GetPosition();
-              //Center the position, so the player will be on the center of the portal
-              pos.X -= (this->player->GetCropArea().Size.Width)/2;
-              pos.Y -= (this->player->GetCropArea().Size.Height)/2;
-              //Change the position of the player
-              this->player->SetPosition(pos);
-            }
-          }
-          else
-            //If the player doesnt collide, the cooldown of the portal is half a second
-            portals[i]->SetCooldown(50);
-      }
-    }
-
-    Refresh();
-  }
-
-  private: void ResetPathfinders() {
-    for each (NPC ^ npc in npcs) {
-      if (npc->GetEntityType() == EntityType::Ally || npc->GetEntityType() == EntityType::Assassin) {
-        Pathfinder::FindPath(mapGrid, npc->GetPosition(), player->GetPosition(), npc);
-      }
-      else if (npc->GetEntityType() == EntityType::Corrupt) {
-        Random r;
-        List<Ally^>^ allies = gcnew List<Ally^>;
-        for each (NPC ^ possibleAlly in npcs) {
-          if (possibleAlly->GetEntityType() == EntityType::Ally)
-            allies->Add((Ally^)possibleAlly);
-        }
-        Ally^ ally = allies[r.Next(0, allies->Count)];
-        Pathfinder::FindPath(mapGrid, npc->GetPosition(), ally->GetPosition(), npc);
-      }
+    if (game != nullptr) {
+      game->MovementTick(MovementTimer->Interval, MessageLabel, MessageTimer);
+      Invalidate();
     }
   }
+
   private: void AnimationTimer_Tick(Object^ sender, EventArgs^ e) {
-    for each (NPC ^ npc in npcs) {
-      npc->ShiftCol();
+    if (game != nullptr) {
+      game->AnimationTick();
     }
-    //Animate portal
-    if (portals != nullptr) {
-      for each (Portal ^ portal in portals)
-        portal->ShiftCol();
-    }
+  }
 
-    player->ShiftCol();
+  private: void MainActivity_MouseMove(Object^ sender, MouseEventArgs^ e) {
+    if (currentUI == UserInterface::InGame)
+      return;
+
+    // Prevent the event to fire twice for the same mouse location
+    // See https://stackoverflow.com/a/23048201
+    Point mousePos = e->Location;
+    if (mousePos == prevMouseLoc)
+      return;
+
+    prevMouseLoc = mouseLoc;
+    mouseLoc = mousePos;
+
+    Invalidate();
+  }
+
+  private: void MainActivity_MouseClick(Object^ sender, MouseEventArgs^ e) {
+    currentUI = UI::ClickEvent(e->Location, currentUI);
+    if (game != nullptr)
+      game->MouseClick(e);
+    Invalidate();
+  }
+
+  private: void PathfinderTimer_Tick(Object^ sender, EventArgs^ e) {
+    if (game != nullptr)
+      game->ResetPathfinders();
+  }
+   private: System::Void MessageTimer_Tick(System::Object^ sender, System::EventArgs^ e) {
+     if (game != nullptr)
+       game->PrintLetterTick(MessageLabel, MessageTimer);
   }
 };
 }
